@@ -9,8 +9,29 @@
         Height="600"
         Width="1000"
         WindowStartupLocation="CenterScreen">
+    <!-- DataContext được set trong MainWindow.xaml.cs thông qua DI -->
+
     <Grid>
-        <!-- Đây là chỗ nhét View -->
-        <ContentControl x:Name="MainContent"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- MENU -->
+        <StackPanel Background="#2C2F33">
+            <Button Content="Dashboard"
+                    Command="{Binding ShowDashboardCommand}"
+                    Margin="10"/>
+            <Button Content="Product"
+                    Command="{Binding ShowProductCommand}"
+                    Margin="10"/>
+            <Button Content="← Back"
+                    Command="{Binding GoBackCommand}"
+                    Margin="10"/>
+        </StackPanel>
+
+        <!-- NỘI DUNG -->
+        <ContentControl Grid.Column="1"
+                        Content="{Binding CurrentView}"/>
     </Grid>
 </Window>

@@ -1,5 +1,5 @@
-﻿using AdminPhoneStore.Views;
-using System.Windows;
+﻿using System.Windows;
+using AdminPhoneStore.ViewModels;
 
 namespace AdminPhoneStore
 {
@@ -8,11 +8,10 @@ namespace AdminPhoneStore
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        public MainWindow(ShellViewModel viewModel)
         {
             InitializeComponent();
-
-            MainContent.Content = new DashboardView();
+            DataContext = viewModel;
         }
     }
 }
