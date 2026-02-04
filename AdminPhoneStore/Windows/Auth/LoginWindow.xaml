@@ -1,0 +1,16 @@
+<Window x:Class="AdminPhoneStore.Windows.Auth.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:AdminPhoneStore.Views.Auth"
+        mc:Ignorable="d"
+        Title="Admin Phone Store - Đăng nhập"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F5F5">
+    <!-- DataContext được set trong LoginWindow.xaml.cs từ constructor injection -->
+    <views:LoginView DataContext="{Binding}"/>
+</Window>

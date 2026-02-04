@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
-using AdminPhoneStore.Services.Interfaces;
+using AdminPhoneStore.Services.UI;
+using AdminPhoneStore.Services.Infrastructure;
 
 namespace AdminPhoneStore.Infrastructure
 {

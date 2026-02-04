@@ -1,5 +1,5 @@
-﻿using System.Windows;
-using AdminPhoneStore.ViewModels;
+﻿using AdminPhoneStore.ViewModels.Pages;
+using System.Windows;
 
 namespace AdminPhoneStore
 {
