@@ -38,4 +38,49 @@ namespace AdminPhoneStore.Helpers
             RaiseCanExecuteChanged();
         }
     }
+
+    /// <summary>
+    /// RelayCommand với parameter support
+    /// </summary>
+    public class RelayCommand<T> : ICommand
+    {
+        private readonly Action<T?> _execute;
+        private readonly Func<T?, bool>? _canExecute;
+
+        public RelayCommand(Action<T?> execute, Func<T?, bool>? canExecute = null)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
+
+            if (_canExecute != null)
+            {
+                CommandManager.RequerySuggested += OnRequerySuggested;
+            }
+        }
+
+        public bool CanExecute(object? parameter)
+        {
+            if (_canExecute == null)
+                return true;
+
+            T? typedParameter = parameter is T t ? t : default;
+            return _canExecute(typedParameter);
+        }
+
+        public void Execute(object? parameter)
+        {
+            T? typedParameter = parameter is T t ? t : default;
+            _execute(typedParameter);
+        }
+
+        public event EventHandler? CanExecuteChanged;
+
+        public void RaiseCanExecuteChanged()
+            => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+
+        private void OnRequerySuggested(object? sender, EventArgs e)
+        {
+            RaiseCanExecuteChanged();
+        }
+    }
 }

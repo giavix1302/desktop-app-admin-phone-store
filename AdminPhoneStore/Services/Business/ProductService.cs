@@ -1,6 +1,5 @@
 using AdminPhoneStore.Models;
 using AdminPhoneStore.Services.Api;
-using AdminPhoneStore.Services.Business;
 
 namespace AdminPhoneStore.Services.Business
 {
@@ -20,22 +19,19 @@ namespace AdminPhoneStore.Services.Business
         {
             try
             {
-                // Giả sử API endpoint là: GET /api/products
                 var products = await _apiClient.GetAsync<List<Product>>("products");
                 return products ?? new List<Product>();
             }
             catch (ApiException)
             {
-                // Re-throw để ViewModel có thể handle
                 throw;
             }
         }
 
-        public async Task<Product?> GetProductByIdAsync(int id)
+        public async Task<Product?> GetProductByIdAsync(long id)
         {
             try
             {
-                // Giả sử API endpoint là: GET /api/products/{id}
                 return await _apiClient.GetAsync<Product>($"products/{id}");
             }
             catch (ApiException)
@@ -44,12 +40,11 @@ namespace AdminPhoneStore.Services.Business
             }
         }
 
-        public async Task<Product?> CreateProductAsync(Product product)
+        public async Task<Product?> CreateProductAsync(CreateProductRequest request)
         {
             try
             {
-                // Giả sử API endpoint là: POST /api/products
-                return await _apiClient.PostAsync<Product, Product>("products", product);
+                return await _apiClient.PostAsync<CreateProductRequest, Product>("products", request);
             }
             catch (ApiException)
             {
@@ -57,12 +52,11 @@ namespace AdminPhoneStore.Services.Business
             }
         }
 
-        public async Task<Product?> UpdateProductAsync(int id, Product product)
+        public async Task<Product?> UpdateProductAsync(long id, UpdateProductRequest request)
         {
             try
             {
-                // Giả sử API endpoint là: PUT /api/products/{id}
-                return await _apiClient.PutAsync<Product, Product>($"products/{id}", product);
+                return await _apiClient.PutAsync<UpdateProductRequest, Product>($"products/{id}", request);
             }
             catch (ApiException)
             {
@@ -70,31 +64,11 @@ namespace AdminPhoneStore.Services.Business
             }
         }
 
-        public async Task<bool> DeleteProductAsync(int id)
+        public async Task<bool> DeleteProductAsync(long id)
         {
             try
             {
-                // Giả sử API endpoint là: DELETE /api/products/{id}
                 return await _apiClient.DeleteAsync($"products/{id}");
-            }
-            catch (ApiException)
-            {
-                throw;
-            }
-        }
-
-        public async Task<List<Product>> SearchProductsAsync(string searchTerm)
-        {
-            try
-            {
-                // Giả sử API endpoint là: GET /api/products/search?q={searchTerm}
-                var queryParams = new Dictionary<string, string>
-                {
-                    { "q", searchTerm }
-                };
-                
-                var products = await _apiClient.GetAsync<List<Product>>("products/search", queryParams);
-                return products ?? new List<Product>();
             }
             catch (ApiException)
             {

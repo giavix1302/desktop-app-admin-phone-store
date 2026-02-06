@@ -154,10 +154,14 @@ namespace AdminPhoneStore
 
             // Register Business Services (transient)
             services.AddTransient<IProductService, ProductService>();
+            services.AddTransient<ICategoryService, CategoryService>();
+            services.AddTransient<IBrandService, BrandService>();
+            services.AddTransient<IColorService, ColorService>();
 
             // Register ViewModels
             services.AddTransient<ShellViewModel>();
             services.AddTransient<DashboardViewModel>();
+            services.AddTransient<ProductViewModel>();
             services.AddTransient<LoginViewModel>();
 
             // Register Views

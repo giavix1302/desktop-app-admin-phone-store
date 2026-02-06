@@ -15,26 +15,21 @@ namespace AdminPhoneStore.Services.Business
         /// <summary>
         /// Lấy product theo ID
         /// </summary>
-        Task<Product?> GetProductByIdAsync(int id);
+        Task<Product?> GetProductByIdAsync(long id);
 
         /// <summary>
         /// Tạo product mới
         /// </summary>
-        Task<Product?> CreateProductAsync(Product product);
+        Task<Product?> CreateProductAsync(CreateProductRequest request);
 
         /// <summary>
         /// Cập nhật product
         /// </summary>
-        Task<Product?> UpdateProductAsync(int id, Product product);
+        Task<Product?> UpdateProductAsync(long id, UpdateProductRequest request);
 
         /// <summary>
         /// Xóa product
         /// </summary>
-        Task<bool> DeleteProductAsync(int id);
-
-        /// <summary>
-        /// Tìm kiếm products
-        /// </summary>
-        Task<List<Product>> SearchProductsAsync(string searchTerm);
+        Task<bool> DeleteProductAsync(long id);
     }
 }
