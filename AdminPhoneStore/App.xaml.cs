@@ -157,6 +157,14 @@ namespace AdminPhoneStore
             services.AddTransient<ICategoryService, CategoryService>();
             services.AddTransient<IBrandService, BrandService>();
             services.AddTransient<IColorService, ColorService>();
+            services.AddTransient<IProductImageService>(sp =>
+            {
+                var httpClient = sp.GetRequiredService<HttpClient>();
+                var apiConfig = sp.GetRequiredService<IApiConfiguration>();
+                var authService = sp.GetService<IAuthenticationService>();
+                var logger = sp.GetService<ILoggerService>();
+                return new ProductImageService(httpClient, apiConfig, authService, logger);
+            });
 
             // Register ViewModels
             services.AddTransient<ShellViewModel>();

@@ -14,6 +14,7 @@ namespace AdminPhoneStore.ViewModels.Pages
         private readonly ICategoryService _categoryService;
         private readonly IBrandService _brandService;
         private readonly IColorService _colorService;
+        private readonly IProductImageService _productImageService;
         private readonly IDialogService _dialogService;
 
         private ObservableCollection<Product> _products = new();
@@ -38,6 +39,9 @@ namespace AdminPhoneStore.ViewModels.Pages
         private ObservableCollection<Category> _categories = new();
         private ObservableCollection<Brand> _brands = new();
         private ObservableCollection<Color> _colors = new();
+
+        // Product Images
+        private ObservableCollection<ProductImage> _productImages = new();
 
         public ObservableCollection<Product> Products
         {
@@ -233,6 +237,10 @@ namespace AdminPhoneStore.ViewModels.Pages
         public RelayCommand DeleteProductCommand { get; }
         public RelayCommand AddSpecificationCommand { get; }
         public RelayCommand<SpecificationRequest> RemoveSpecificationCommand { get; }
+        public RelayCommand LoadProductImagesCommand { get; }
+        public RelayCommand UploadImageCommand { get; }
+        public RelayCommand<ProductImage> DeleteImageCommand { get; }
+        public RelayCommand<ProductImage> SetPrimaryImageCommand { get; }
 
         // Helper property để bind với ListBox SelectedItems
         private ObservableCollection<Color> _selectedColors = new();
@@ -246,23 +254,36 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
+        public ObservableCollection<ProductImage> ProductImages
+        {
+            get => _productImages;
+            set
+            {
+                _productImages = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ProductViewModel(
             IProductService productService,
             ICategoryService categoryService,
             IBrandService brandService,
             IColorService colorService,
+            IProductImageService productImageService,
             IDialogService dialogService)
         {
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
             _brandService = brandService ?? throw new ArgumentNullException(nameof(brandService));
             _colorService = colorService ?? throw new ArgumentNullException(nameof(colorService));
+            _productImageService = productImageService ?? throw new ArgumentNullException(nameof(productImageService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
 
             LoadProductsCommand = new RelayCommand(async () => await LoadProductsAsync());
             LoadDropdownsCommand = new RelayCommand(async () => await LoadDropdownsAsync());
             AddProductCommand = new RelayCommand(() => ShowAddForm());
-            EditProductCommand = new RelayCommand(() => { 
+            EditProductCommand = new RelayCommand(() =>
+            {
                 if (SelectedProduct != null)
                 {
                     LoadProductForEdit(SelectedProduct);
@@ -273,6 +294,10 @@ namespace AdminPhoneStore.ViewModels.Pages
             DeleteProductCommand = new RelayCommand(async () => await DeleteProductAsync(), () => SelectedProduct != null);
             AddSpecificationCommand = new RelayCommand(() => AddSpecification());
             RemoveSpecificationCommand = new RelayCommand<SpecificationRequest>((spec) => RemoveSpecification(spec));
+            LoadProductImagesCommand = new RelayCommand(async () => await LoadProductImagesAsync());
+            UploadImageCommand = new RelayCommand(async () => await UploadImageAsync());
+            DeleteImageCommand = new RelayCommand<ProductImage>(async (image) => await DeleteImageAsync(image));
+            SetPrimaryImageCommand = new RelayCommand<ProductImage>(async (image) => await SetPrimaryImageAsync(image));
 
             // Load data khi khởi tạo
             _ = LoadDropdownsAsync();
@@ -333,6 +358,21 @@ namespace AdminPhoneStore.ViewModels.Pages
                     {
                         Colors.Add(color);
                     }
+
+                    // Nếu đang edit và có SelectedColorIds, sync lại SelectedColors
+                    if (SelectedColorIds.Count > 0 && Colors.Count > 0)
+                    {
+                        SelectedColors.Clear();
+                        foreach (var colorId in SelectedColorIds)
+                        {
+                            var colorObj = Colors.FirstOrDefault(c => c.Id == colorId);
+                            if (colorObj != null)
+                            {
+                                SelectedColors.Add(colorObj);
+                            }
+                        }
+                        OnPropertyChanged(nameof(SelectedColors));
+                    }
                 });
             }
             catch (Exception ex)
@@ -360,15 +400,29 @@ namespace AdminPhoneStore.ViewModels.Pages
             SelectedBrandId = product.BrandId;
             SelectedColorIds.Clear();
             SelectedColors.Clear();
-            foreach (var color in product.Colors)
+
+            // Đảm bảo Colors đã được load trước khi sync
+            if (Colors.Count > 0)
             {
-                SelectedColorIds.Add(color.Id);
-                var colorObj = Colors.FirstOrDefault(c => c.Id == color.Id);
-                if (colorObj != null)
+                foreach (var color in product.Colors)
                 {
-                    SelectedColors.Add(colorObj);
+                    SelectedColorIds.Add(color.Id);
+                    var colorObj = Colors.FirstOrDefault(c => c.Id == color.Id);
+                    if (colorObj != null)
+                    {
+                        SelectedColors.Add(colorObj);
+                    }
                 }
             }
+            else
+            {
+                // Nếu Colors chưa load, lưu lại để sync sau
+                foreach (var color in product.Colors)
+                {
+                    SelectedColorIds.Add(color.Id);
+                }
+            }
+
             Specifications.Clear();
             foreach (var spec in product.Specifications)
             {
@@ -379,6 +433,15 @@ namespace AdminPhoneStore.ViewModels.Pages
                 });
             }
             IsEditMode = true;
+
+            // Trigger PropertyChanged để sync với UI
+            OnPropertyChanged(nameof(SelectedColors));
+
+            // Load product images
+            if (product.Id > 0)
+            {
+                _ = LoadProductImagesAsync();
+            }
         }
 
         private void ResetForm()
@@ -394,6 +457,7 @@ namespace AdminPhoneStore.ViewModels.Pages
             SelectedColorIds.Clear();
             SelectedColors.Clear();
             Specifications.Clear();
+            ProductImages.Clear();
         }
 
         private void CancelEdit()
@@ -547,6 +611,176 @@ namespace AdminPhoneStore.ViewModels.Pages
             if (spec != null)
             {
                 Specifications.Remove(spec);
+            }
+        }
+
+        private async Task LoadProductImagesAsync()
+        {
+            if (SelectedProduct == null || SelectedProduct.Id <= 0) return;
+
+            try
+            {
+                IsLoading = true;
+                var images = await _productImageService.GetProductImagesAsync(SelectedProduct.Id);
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ProductImages.Clear();
+                    foreach (var image in images)
+                    {
+                        ProductImages.Add(image);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Lỗi khi tải hình ảnh sản phẩm: {ex.Message}", "Lỗi");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task UploadImageAsync()
+        {
+            if (SelectedProduct == null || SelectedProduct.Id <= 0)
+            {
+                _dialogService.ShowError("Vui lòng lưu sản phẩm trước khi upload hình ảnh", "Lỗi");
+                return;
+            }
+
+            try
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = "Image files (*.jpg;*.jpeg;*.png;*.gif;*.bmp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp|All files (*.*)|*.*",
+                    Title = "Chọn hình ảnh sản phẩm"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    IsLoading = true;
+                    var image = await _productImageService.UploadProductImageAsync(
+                        SelectedProduct.Id,
+                        dialog.FileName,
+                        null,
+                        ProductImages.Count == 0 // Auto set primary nếu là ảnh đầu tiên
+                    );
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ProductImages.Add(image);
+                        // Sort: primary first
+                        var sorted = ProductImages.OrderByDescending(i => i.IsPrimary).ToList();
+                        ProductImages.Clear();
+                        foreach (var img in sorted)
+                        {
+                            ProductImages.Add(img);
+                        }
+                    });
+
+                    _dialogService.ShowSuccess("Upload hình ảnh thành công!");
+                }
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Lỗi khi upload hình ảnh: {ex.Message}", "Lỗi");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task DeleteImageAsync(ProductImage? image)
+        {
+            if (image == null || SelectedProduct == null || SelectedProduct.Id <= 0) return;
+
+            bool confirmed = _dialogService.ShowConfirmation(
+                "Bạn có chắc muốn xóa hình ảnh này?",
+                "Xác nhận xóa",
+                "Xóa",
+                "Hủy"
+            );
+
+            if (!confirmed) return;
+
+            try
+            {
+                IsLoading = true;
+                await _productImageService.DeleteProductImageAsync(SelectedProduct.Id, image.Id);
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ProductImages.Remove(image);
+                });
+
+                _dialogService.ShowSuccess("Xóa hình ảnh thành công!");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Lỗi khi xóa hình ảnh: {ex.Message}", "Lỗi");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task SetPrimaryImageAsync(ProductImage? image)
+        {
+            if (image == null || SelectedProduct == null || SelectedProduct.Id <= 0) return;
+
+            if (image.IsPrimary)
+            {
+                _dialogService.ShowError("Hình ảnh này đã là ảnh chính", "Thông báo");
+                return;
+            }
+
+            try
+            {
+                IsLoading = true;
+                var updatedImage = await _productImageService.UpdateProductImageAsync(
+                    SelectedProduct.Id,
+                    image.Id,
+                    null,
+                    null,
+                    true // Set primary
+                );
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    // Update image in collection
+                    var existingImage = ProductImages.FirstOrDefault(i => i.Id == image.Id);
+                    if (existingImage != null)
+                    {
+                        existingImage.IsPrimary = true;
+                    }
+
+                    // Unset other primary images
+                    foreach (var img in ProductImages.Where(i => i.Id != image.Id))
+                    {
+                        img.IsPrimary = false;
+                    }
+
+                    // Sort: primary first
+                    var sorted = ProductImages.OrderByDescending(i => i.IsPrimary).ToList();
+                    ProductImages.Clear();
+                    foreach (var img in sorted)
+                    {
+                        ProductImages.Add(img);
+                    }
+                });
+
+                _dialogService.ShowSuccess("Đặt ảnh chính thành công!");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Lỗi khi đặt ảnh chính: {ex.Message}", "Lỗi");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
     }
