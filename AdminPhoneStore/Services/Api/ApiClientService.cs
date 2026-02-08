@@ -1,5 +1,4 @@
 using AdminPhoneStore.Models;
-using AdminPhoneStore.Services.Api;
 using AdminPhoneStore.Services.Auth;
 using AdminPhoneStore.Services.Infrastructure;
 using System.Net.Http;
@@ -35,11 +34,10 @@ namespace AdminPhoneStore.Services.Api
             _loggerService = loggerService;
             _authenticationService = authenticationService;
 
-            // Setup HttpClient
-            _httpClient.BaseAddress = new Uri(_baseUrl);
-            _httpClient.Timeout = TimeSpan.FromSeconds(apiConfiguration.TimeoutSeconds);
-            _httpClient.DefaultRequestHeaders.Accept.Clear();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            // Setup HttpClient (don't set BaseAddress or Timeout on shared instance)
+            // Note: BaseAddress and Timeout cannot be set after HttpClient has been used
+            // We'll build full URLs in BuildUrl method instead
+            // Timeout and Accept header should be set when creating HttpClient in DI container
         }
 
         public async Task<T?> GetAsync<T>(string endpoint) where T : class
@@ -65,15 +63,16 @@ namespace AdminPhoneStore.Services.Api
             where TResponse : class
         {
             SyncTokenFromAuthService(); // Sync token trước mỗi request
-            _loggerService?.LogInformation($"API POST: {endpoint}");
+            var url = BuildUrl(endpoint, null);
+            _loggerService?.LogInformation($"API POST: {url}");
 
             return await ExecuteWithRetryAndAutoRefreshAsync(async () =>
             {
                 var json = JsonSerializer.Serialize(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync(endpoint, content);
-                return await HandleResponseAsync<TResponse>(response, endpoint);
-            }, endpoint);
+                var response = await _httpClient.PostAsync(url, content);
+                return await HandleResponseAsync<TResponse>(response, url);
+            }, url);
         }
 
         public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data)
@@ -81,25 +80,27 @@ namespace AdminPhoneStore.Services.Api
             where TResponse : class
         {
             SyncTokenFromAuthService(); // Sync token trước mỗi request
-            _loggerService?.LogInformation($"API PUT: {endpoint}");
+            var url = BuildUrl(endpoint, null);
+            _loggerService?.LogInformation($"API PUT: {url}");
 
             return await ExecuteWithRetryAndAutoRefreshAsync(async () =>
             {
                 var json = JsonSerializer.Serialize(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PutAsync(endpoint, content);
-                return await HandleResponseAsync<TResponse>(response, endpoint);
-            }, endpoint);
+                var response = await _httpClient.PutAsync(url, content);
+                return await HandleResponseAsync<TResponse>(response, url);
+            }, url);
         }
 
         public async Task<bool> DeleteAsync(string endpoint)
         {
             SyncTokenFromAuthService(); // Sync token trước mỗi request
-            _loggerService?.LogInformation($"API DELETE: {endpoint}");
+            var url = BuildUrl(endpoint, null);
+            _loggerService?.LogInformation($"API DELETE: {url}");
 
             return await ExecuteWithRetryAndAutoRefreshAsync(async () =>
             {
-                var response = await _httpClient.DeleteAsync(endpoint);
+                var response = await _httpClient.DeleteAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -125,13 +126,13 @@ namespace AdminPhoneStore.Services.Api
                         }
                     }
 
-                    _loggerService?.LogInformation($"API DELETE Success: {endpoint}");
+                    _loggerService?.LogInformation($"API DELETE Success: {url}");
                     return true;
                 }
 
                 await HandleErrorResponse(response);
                 return false;
-            }, endpoint);
+            }, url);
         }
 
         public void SetAuthToken(string? token)
@@ -164,32 +165,87 @@ namespace AdminPhoneStore.Services.Api
             }
         }
 
+        /// <summary>
+        /// Build full URL from endpoint, handling base URL and API prefix correctly
+        /// </summary>
         private string BuildUrl(string endpoint, Dictionary<string, string>? queryParams)
         {
-            if (queryParams == null || queryParams.Count == 0)
+            // Build query string if params provided
+            string? queryString = null;
+            if (queryParams != null && queryParams.Count > 0)
+            {
+                queryString = string.Join("&", queryParams.Select(kvp =>
+                    $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+            }
+
+            // If endpoint is already a full URL, use it as-is
+            if (endpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                if (queryString != null)
+                {
+                    return $"{endpoint}?{queryString}";
+                }
                 return endpoint;
+            }
 
-            var queryString = string.Join("&", queryParams.Select(kvp =>
-                $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+            // Normalize endpoint - remove leading slashes
+            var normalizedEndpoint = endpoint.TrimStart('/');
+            
+            // Remove "api/" prefix from endpoint if it exists (we'll handle it based on BaseUrl)
+            if (normalizedEndpoint.StartsWith("api/", StringComparison.OrdinalIgnoreCase))
+            {
+                normalizedEndpoint = normalizedEndpoint.Substring(4); // Remove "api/"
+            }
+            
+            // Check if base URL already contains "/api"
+            var baseUrlNormalized = _baseUrl.TrimEnd('/');
+            var baseUrlLower = baseUrlNormalized.ToLowerInvariant();
+            var baseUrlHasApi = baseUrlLower.EndsWith("/api");
+            
+            // Build the full path
+            string fullPath;
+            if (baseUrlHasApi)
+            {
+                // BaseUrl already has /api, just append endpoint
+                fullPath = $"{baseUrlNormalized}/{normalizedEndpoint}";
+            }
+            else
+            {
+                // BaseUrl doesn't have /api, add it
+                fullPath = $"{baseUrlNormalized}/api/{normalizedEndpoint}";
+            }
 
-            return $"{endpoint}?{queryString}";
+            var fullUri = new Uri(fullPath);
+
+            if (queryString == null)
+                return fullUri.ToString();
+
+            return $"{fullUri}?{queryString}";
         }
 
         private async Task<T> HandleResponseAsync<T>(HttpResponseMessage response, string endpoint) where T : class
         {
             var content = await response.Content.ReadAsStringAsync();
+            
+            // Log response content for debugging
+            _loggerService?.LogInformation($"API Response Content (first 500 chars): {content?.Substring(0, Math.Min(500, content?.Length ?? 0))}");
 
             if (response.IsSuccessStatusCode)
             {
                 _loggerService?.LogInformation($"API Success: {endpoint}");
 
+                // Configure JsonSerializerOptions with enum handling
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    // Allow enum to be deserialized as both string and number
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                };
+
                 // Try to deserialize as ApiResponse<T> first
                 try
                 {
-                    var apiResponse = JsonSerializer.Deserialize<ApiResponse<T>>(content, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    var apiResponse = JsonSerializer.Deserialize<ApiResponse<T>>(content, jsonOptions);
 
                     if (apiResponse != null)
                     {
@@ -201,29 +257,39 @@ namespace AdminPhoneStore.Services.Api
 
                         if (apiResponse.Data == null)
                         {
+                            _loggerService?.LogWarning($"API returned success but data is null. Response: {content}");
                             throw new ApiException("API returned success but data is null", response.StatusCode);
                         }
 
+                        _loggerService?.LogInformation($"Deserialized {typeof(T).Name} successfully. Data type: {apiResponse.Data?.GetType().Name}");
                         return apiResponse.Data;
                     }
                 }
-                catch (JsonException)
+                catch (JsonException ex)
                 {
+                    _loggerService?.LogError($"Failed to deserialize as ApiResponse<T>: {ex.Message}. Content: {content?.Substring(0, Math.Min(200, content?.Length ?? 0))}");
                     // Not an ApiResponse wrapper, try direct deserialize
                 }
 
                 // Direct deserialize (for endpoints that don't use ApiResponse wrapper)
-                var directResult = JsonSerializer.Deserialize<T>(content, new JsonSerializerOptions
+                try
                 {
-                    PropertyNameCaseInsensitive = true
-                });
+                    var directResult = JsonSerializer.Deserialize<T>(content, jsonOptions);
 
-                if (directResult == null)
-                {
-                    throw new ApiException("Failed to deserialize response", response.StatusCode);
+                    if (directResult == null)
+                    {
+                        _loggerService?.LogError($"Failed to deserialize response. Content: {content?.Substring(0, Math.Min(200, content?.Length ?? 0))}");
+                        throw new ApiException("Failed to deserialize response", response.StatusCode);
+                    }
+
+                    _loggerService?.LogInformation($"Deserialized {typeof(T).Name} directly successfully");
+                    return directResult;
                 }
-
-                return directResult;
+                catch (JsonException ex)
+                {
+                    _loggerService?.LogError($"Failed to deserialize response: {ex.Message}. Content: {content?.Substring(0, Math.Min(500, content?.Length ?? 0))}");
+                    throw new ApiException($"Failed to deserialize response: {ex.Message}", response.StatusCode);
+                }
             }
 
             // Handle 401 Unauthorized - try to refresh token

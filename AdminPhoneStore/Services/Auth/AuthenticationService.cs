@@ -44,12 +44,14 @@ namespace AdminPhoneStore.Services.Auth
             _loggerService = loggerService;
 
             // Setup HttpClient cho auth endpoints
-            if (_httpClient.BaseAddress == null)
+            // Note: Don't set BaseAddress on shared HttpClient instance
+            // We'll build full URLs in each request instead
+            // Only set Accept header if not already set
+            if (!_httpClient.DefaultRequestHeaders.Accept.Any())
             {
-                _httpClient.BaseAddress = new Uri(_apiConfiguration.BaseUrl);
+                _httpClient.DefaultRequestHeaders.Accept.Clear();
+                _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
-            _httpClient.DefaultRequestHeaders.Accept.Clear();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
         public async Task<bool> LoginAsync(string email, string password)
@@ -67,7 +69,8 @@ namespace AdminPhoneStore.Services.Auth
                 // Gọi API: POST /api/auth/login
                 var json = JsonSerializer.Serialize(loginRequest);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync("auth/login", content);
+                var url = BuildUrl("auth/login");
+                var response = await _httpClient.PostAsync(url, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -133,7 +136,8 @@ namespace AdminPhoneStore.Services.Auth
                 {
                     try
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Post, "auth/logout");
+                        var url = BuildUrl("auth/logout");
+                        var request = new HttpRequestMessage(HttpMethod.Post, url);
                         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _currentAccessToken);
                         var response = await _httpClient.SendAsync(request);
                         
@@ -190,7 +194,8 @@ namespace AdminPhoneStore.Services.Auth
 
                 var json = JsonSerializer.Serialize(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync("auth/refresh-admin", content);
+                var url = BuildUrl("auth/refresh-admin");
+                var response = await _httpClient.PostAsync(url, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -313,6 +318,47 @@ namespace AdminPhoneStore.Services.Auth
         private void OnAuthenticationStateChanged(bool isAuthenticated)
         {
             AuthenticationStateChanged?.Invoke(this, isAuthenticated);
+        }
+
+        /// <summary>
+        /// Build full URL from endpoint, handling base URL and API prefix correctly
+        /// </summary>
+        private string BuildUrl(string endpoint)
+        {
+            // If endpoint is already a full URL, use it as-is
+            if (endpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                return endpoint;
+            }
+
+            // Normalize endpoint - remove leading slashes
+            var normalizedEndpoint = endpoint.TrimStart('/');
+            
+            // Remove "api/" prefix from endpoint if it exists (we'll handle it based on BaseUrl)
+            if (normalizedEndpoint.StartsWith("api/", StringComparison.OrdinalIgnoreCase))
+            {
+                normalizedEndpoint = normalizedEndpoint.Substring(4); // Remove "api/"
+            }
+            
+            // Check if base URL already contains "/api"
+            var baseUrlNormalized = _apiConfiguration.BaseUrl.TrimEnd('/');
+            var baseUrlLower = baseUrlNormalized.ToLowerInvariant();
+            var baseUrlHasApi = baseUrlLower.EndsWith("/api");
+            
+            // Build the full path
+            string fullPath;
+            if (baseUrlHasApi)
+            {
+                // BaseUrl already has /api, just append endpoint
+                fullPath = $"{baseUrlNormalized}/{normalizedEndpoint}";
+            }
+            else
+            {
+                // BaseUrl doesn't have /api, add it
+                fullPath = $"{baseUrlNormalized}/api/{normalizedEndpoint}";
+            }
+
+            return new Uri(fullPath).ToString();
         }
     }
 }

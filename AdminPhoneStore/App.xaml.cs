@@ -8,6 +8,7 @@ using AdminPhoneStore.ViewModels.Auth;
 using AdminPhoneStore.ViewModels.Pages;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Windows;
 
 namespace AdminPhoneStore
@@ -124,7 +125,13 @@ namespace AdminPhoneStore
             // Register HttpClient (singleton để tái sử dụng connection)
             services.AddSingleton<HttpClient>(sp =>
             {
+                var apiConfig = sp.GetRequiredService<IApiConfiguration>();
                 var httpClient = new HttpClient();
+                // Set Timeout khi tạo HttpClient, trước khi nó được sử dụng
+                httpClient.Timeout = TimeSpan.FromSeconds(apiConfig.TimeoutSeconds);
+                // Set Accept header
+                httpClient.DefaultRequestHeaders.Accept.Clear();
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 return httpClient;
             });
 
@@ -157,6 +164,8 @@ namespace AdminPhoneStore
             services.AddTransient<ICategoryService, CategoryService>();
             services.AddTransient<IBrandService, BrandService>();
             services.AddTransient<IColorService, ColorService>();
+            services.AddTransient<IOrderService, OrderService>();
+            services.AddTransient<IUserService, UserService>();
             services.AddTransient<IProductImageService>(sp =>
             {
                 var httpClient = sp.GetRequiredService<HttpClient>();
@@ -170,11 +179,19 @@ namespace AdminPhoneStore
             services.AddTransient<ShellViewModel>();
             services.AddTransient<DashboardViewModel>();
             services.AddTransient<ProductViewModel>();
+            services.AddTransient<CategoryViewModel>();
+            services.AddTransient<BrandViewModel>();
+            services.AddTransient<OrderViewModel>();
+            services.AddTransient<UserViewModel>();
             services.AddTransient<LoginViewModel>();
 
             // Register Views
             services.AddTransient<Views.Pages.DashboardView>();
             services.AddTransient<Views.Pages.ProductView>();
+            services.AddTransient<Views.Pages.CategoryView>();
+            services.AddTransient<Views.Pages.BrandView>();
+            services.AddTransient<Views.Pages.OrderView>();
+            services.AddTransient<Views.Pages.UserView>();
             services.AddTransient<Views.Auth.LoginView>();
             services.AddTransient<Views.Dialogs.ToastView>();
             services.AddTransient<Views.Dialogs.ConfirmDialogView>();

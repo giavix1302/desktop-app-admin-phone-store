@@ -9,5 +9,8 @@ namespace AdminPhoneStore.Services.Business
     {
         Task<List<Category>> GetAllCategoriesAsync();
         Task<Category?> GetCategoryByIdAsync(long id);
+        Task<Category?> CreateCategoryAsync(CreateCategoryRequest request);
+        Task<Category?> UpdateCategoryAsync(long id, UpdateCategoryRequest request);
+        Task<bool> DeleteCategoryAsync(long id);
     }
 }

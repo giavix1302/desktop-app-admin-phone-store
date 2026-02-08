@@ -41,6 +41,10 @@ namespace AdminPhoneStore.ViewModels.Pages
 
         public RelayCommand ShowDashboardCommand { get; }
         public RelayCommand ShowProductCommand { get; }
+        public RelayCommand ShowCategoryCommand { get; }
+        public RelayCommand ShowBrandCommand { get; }
+        public RelayCommand ShowOrderCommand { get; }
+        public RelayCommand ShowCustomerCommand { get; }
         public RelayCommand GoBackCommand { get; }
         public RelayCommand LogoutCommand { get; }
 
@@ -70,6 +74,30 @@ namespace AdminPhoneStore.ViewModels.Pages
             {
                 ActiveMenu = "Product";
                 _navigationService.NavigateTo<Views.Pages.ProductView>();
+            });
+
+            ShowCategoryCommand = new RelayCommand(() =>
+            {
+                ActiveMenu = "Category";
+                _navigationService.NavigateTo<Views.Pages.CategoryView>();
+            });
+
+            ShowBrandCommand = new RelayCommand(() =>
+            {
+                ActiveMenu = "Brand";
+                _navigationService.NavigateTo<Views.Pages.BrandView>();
+            });
+
+            ShowOrderCommand = new RelayCommand(() =>
+            {
+                ActiveMenu = "Orders";
+                _navigationService.NavigateTo<Views.Pages.OrderView>();
+            });
+
+            ShowCustomerCommand = new RelayCommand(() =>
+            {
+                ActiveMenu = "Customers";
+                _navigationService.NavigateTo<Views.Pages.UserView>();
             });
 
             GoBackCommand = new RelayCommand(

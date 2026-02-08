@@ -39,5 +39,41 @@ namespace AdminPhoneStore.Services.Business
                 throw;
             }
         }
+
+        public async Task<Category?> CreateCategoryAsync(CreateCategoryRequest request)
+        {
+            try
+            {
+                return await _apiClient.PostAsync<CreateCategoryRequest, Category>("categories", request);
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+        }
+
+        public async Task<Category?> UpdateCategoryAsync(long id, UpdateCategoryRequest request)
+        {
+            try
+            {
+                return await _apiClient.PutAsync<UpdateCategoryRequest, Category>($"categories/{id}", request);
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteCategoryAsync(long id)
+        {
+            try
+            {
+                return await _apiClient.DeleteAsync($"categories/{id}");
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+        }
     }
 }

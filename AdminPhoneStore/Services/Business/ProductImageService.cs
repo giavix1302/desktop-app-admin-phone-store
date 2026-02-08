@@ -30,13 +30,15 @@ namespace AdminPhoneStore.Services.Business
             _authenticationService = authenticationService;
             _loggerService = loggerService;
 
-            // Setup HttpClient
-            if (_httpClient.BaseAddress == null)
+            // Setup HttpClient (don't set BaseAddress on shared instance)
+            // Note: BaseAddress cannot be set after HttpClient has been used
+            // We'll build full URLs in each request instead
+            // Only set Accept header if not already set
+            if (!_httpClient.DefaultRequestHeaders.Accept.Any())
             {
-                _httpClient.BaseAddress = new Uri(_apiConfiguration.BaseUrl);
+                _httpClient.DefaultRequestHeaders.Accept.Clear();
+                _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
-            _httpClient.DefaultRequestHeaders.Accept.Clear();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
         public async Task<List<ProductImage>> GetProductImagesAsync(long productId)
@@ -45,7 +47,8 @@ namespace AdminPhoneStore.Services.Business
             {
                 SyncToken();
                 var endpoint = $"products/{productId}/images";
-                var response = await _httpClient.GetAsync(endpoint);
+                var url = BuildUrl(endpoint);
+                var response = await _httpClient.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -82,6 +85,7 @@ namespace AdminPhoneStore.Services.Business
 
                 SyncToken();
                 var endpoint = $"products/{productId}/images";
+                var url = BuildUrl(endpoint);
 
                 using var content = new MultipartFormDataContent();
 
@@ -101,7 +105,7 @@ namespace AdminPhoneStore.Services.Business
                 // Add isPrimary
                 content.Add(new StringContent(isPrimary.ToString().ToLower()), "isPrimary");
 
-                var response = await _httpClient.PostAsync(endpoint, content);
+                var response = await _httpClient.PostAsync(url, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -133,6 +137,7 @@ namespace AdminPhoneStore.Services.Business
             {
                 SyncToken();
                 var endpoint = $"products/{productId}/images/{imageId}";
+                var url = BuildUrl(endpoint);
 
                 using var content = new MultipartFormDataContent();
 
@@ -158,7 +163,7 @@ namespace AdminPhoneStore.Services.Business
                     content.Add(new StringContent(isPrimary.Value.ToString().ToLower()), "isPrimary");
                 }
 
-                var response = await _httpClient.PutAsync(endpoint, content);
+                var response = await _httpClient.PutAsync(url, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -190,7 +195,8 @@ namespace AdminPhoneStore.Services.Business
             {
                 SyncToken();
                 var endpoint = $"products/{productId}/images/{imageId}";
-                var response = await _httpClient.DeleteAsync(endpoint);
+                var url = BuildUrl(endpoint);
+                var response = await _httpClient.DeleteAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -238,6 +244,47 @@ namespace AdminPhoneStore.Services.Business
                     _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 }
             }
+        }
+
+        /// <summary>
+        /// Build full URL from endpoint, handling base URL and API prefix correctly
+        /// </summary>
+        private string BuildUrl(string endpoint)
+        {
+            // If endpoint is already a full URL, use it as-is
+            if (endpoint.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                return endpoint;
+            }
+
+            // Normalize endpoint - remove leading slashes
+            var normalizedEndpoint = endpoint.TrimStart('/');
+            
+            // Remove "api/" prefix from endpoint if it exists (we'll handle it based on BaseUrl)
+            if (normalizedEndpoint.StartsWith("api/", StringComparison.OrdinalIgnoreCase))
+            {
+                normalizedEndpoint = normalizedEndpoint.Substring(4); // Remove "api/"
+            }
+            
+            // Check if base URL already contains "/api"
+            var baseUrlNormalized = _apiConfiguration.BaseUrl.TrimEnd('/');
+            var baseUrlLower = baseUrlNormalized.ToLowerInvariant();
+            var baseUrlHasApi = baseUrlLower.EndsWith("/api");
+            
+            // Build the full path
+            string fullPath;
+            if (baseUrlHasApi)
+            {
+                // BaseUrl already has /api, just append endpoint
+                fullPath = $"{baseUrlNormalized}/{normalizedEndpoint}";
+            }
+            else
+            {
+                // BaseUrl doesn't have /api, add it
+                fullPath = $"{baseUrlNormalized}/api/{normalizedEndpoint}";
+            }
+
+            return new Uri(fullPath).ToString();
         }
 
         private async Task HandleErrorResponse(HttpResponseMessage response)

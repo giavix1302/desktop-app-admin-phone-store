@@ -9,5 +9,8 @@ namespace AdminPhoneStore.Services.Business
     {
         Task<List<Brand>> GetAllBrandsAsync();
         Task<Brand?> GetBrandByIdAsync(long id);
+        Task<Brand?> CreateBrandAsync(CreateBrandRequest request);
+        Task<Brand?> UpdateBrandAsync(long id, UpdateBrandRequest request);
+        Task<bool> DeleteBrandAsync(long id);
     }
 }

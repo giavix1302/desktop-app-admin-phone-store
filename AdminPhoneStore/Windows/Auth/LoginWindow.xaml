@@ -8,9 +8,78 @@
         Title="Admin Phone Store - Đăng nhập"
         WindowStyle="None"
         ResizeMode="NoResize"
-        WindowState="Maximized"
+        WindowState="Normal"
         WindowStartupLocation="CenterScreen"
-        Background="#F5F5F5">
-    <!-- DataContext được set trong LoginWindow.xaml.cs từ constructor injection -->
-    <views:LoginView DataContext="{Binding}"/>
+        Background="#F5F5F5"
+        ShowInTaskbar="True"
+        AllowsTransparency="False">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <!-- Header với nút Close -->
+        <Border Grid.Row="0"
+            Background="White"
+            Height="40"
+            BorderBrush="#E2E8F0"
+            BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <!-- Title -->
+                <TextBlock Grid.Column="0"
+                    Text="Admin Phone Store - Đăng nhập"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Foreground="#1E293B"
+                    VerticalAlignment="Center"
+                    Margin="24,0,0,0" />
+                
+                <!-- Close Button -->
+                <Button x:Name="CloseButton"
+                    Grid.Column="1"
+                    Width="46"
+                    Height="40"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Click="CloseButton_Click">
+                    <TextBlock Text="✕" 
+                        FontSize="16" 
+                        Foreground="#475569"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center" />
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="0">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#EF4444" />
+                                    <Setter Property="Foreground" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
+        </Border>
+        
+        <!-- Content -->
+        <views:LoginView Grid.Row="1" DataContext="{Binding}"/>
+    </Grid>
 </Window>

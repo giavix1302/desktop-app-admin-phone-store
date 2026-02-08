@@ -39,5 +39,41 @@ namespace AdminPhoneStore.Services.Business
                 throw;
             }
         }
+
+        public async Task<Brand?> CreateBrandAsync(CreateBrandRequest request)
+        {
+            try
+            {
+                return await _apiClient.PostAsync<CreateBrandRequest, Brand>("brands", request);
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+        }
+
+        public async Task<Brand?> UpdateBrandAsync(long id, UpdateBrandRequest request)
+        {
+            try
+            {
+                return await _apiClient.PutAsync<UpdateBrandRequest, Brand>($"brands/{id}", request);
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteBrandAsync(long id)
+        {
+            try
+            {
+                return await _apiClient.DeleteAsync($"brands/{id}");
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+        }
     }
 }

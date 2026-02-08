@@ -8,9 +8,11 @@
     Title="Admin Phone Store"
     WindowStyle="None"
     ResizeMode="CanResize"
-    WindowState="Maximized"
+    WindowState="Normal"
     WindowStartupLocation="CenterScreen"
-    Background="#F5F7FA">
+    Background="#F5F7FA"
+    ShowInTaskbar="True"
+    AllowsTransparency="False">
     <Window.Resources>
         <!-- Menu Button Style with Active State -->
         <Style x:Key="MenuButtonStyle" TargetType="Button">
@@ -39,6 +41,22 @@
                 </DataTrigger>
                 <!-- Active State for Product -->
                 <DataTrigger Binding="{Binding ActiveMenu}" Value="Product">
+                    <Setter Property="Background" Value="#685AFF" />
+                </DataTrigger>
+                <!-- Active State for Category -->
+                <DataTrigger Binding="{Binding ActiveMenu}" Value="Category">
+                    <Setter Property="Background" Value="#685AFF" />
+                </DataTrigger>
+                <!-- Active State for Brand -->
+                <DataTrigger Binding="{Binding ActiveMenu}" Value="Brand">
+                    <Setter Property="Background" Value="#685AFF" />
+                </DataTrigger>
+                <!-- Active State for Orders -->
+                <DataTrigger Binding="{Binding ActiveMenu}" Value="Orders">
+                    <Setter Property="Background" Value="#685AFF" />
+                </DataTrigger>
+                <!-- Active State for Customers -->
+                <DataTrigger Binding="{Binding ActiveMenu}" Value="Customers">
                     <Setter Property="Background" Value="#685AFF" />
                 </DataTrigger>
                 <!-- Hover State -->
@@ -122,8 +140,29 @@
                             </StackPanel>
                         </Button>
 
+                        <!-- Categories -->
+                        <Button Command="{Binding ShowCategoryCommand}"
+                            Style="{StaticResource MenuButtonStyle}"
+                            Tag="Category">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📁" FontSize="18" Margin="0,0,12,0" />
+                                <TextBlock Text="Categories" FontSize="14" Foreground="White" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Brands -->
+                        <Button Command="{Binding ShowBrandCommand}"
+                            Style="{StaticResource MenuButtonStyle}"
+                            Tag="Brand">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🏷️" FontSize="18" Margin="0,0,12,0" />
+                                <TextBlock Text="Brands" FontSize="14" Foreground="White" />
+                            </StackPanel>
+                        </Button>
+
                         <!-- Orders -->
-                        <Button Style="{StaticResource MenuButtonStyle}"
+                        <Button Command="{Binding ShowOrderCommand}"
+                            Style="{StaticResource MenuButtonStyle}"
                             Tag="Orders">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="🛒" FontSize="18" Margin="0,0,12,0" />
@@ -132,7 +171,8 @@
                         </Button>
 
                         <!-- Customers -->
-                        <Button Style="{StaticResource MenuButtonStyle}"
+                        <Button Command="{Binding ShowCustomerCommand}"
+                            Style="{StaticResource MenuButtonStyle}"
                             Tag="Customers">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="👥" FontSize="18" Margin="0,0,12,0" />
@@ -235,7 +275,8 @@
                 Background="White"
                 BorderBrush="#E2E8F0"
                 BorderThickness="0,0,0,1"
-                Padding="24,0">
+                Padding="24,0"
+                MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -270,37 +311,30 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Right Actions -->
+                    <!-- Right Actions - Window Controls -->
                     <StackPanel Grid.Column="1"
                         Orientation="Horizontal"
                         VerticalAlignment="Center">
-                        <!-- Language Selector -->
-                        <ComboBox Width="100"
-                            Height="36"
-                            Margin="0,0,12,0"
-                            Background="#F1F5F9"
-                            BorderBrush="#E2E8F0"
-                            BorderThickness="1"
-                            Padding="12,8"
-                            VerticalContentAlignment="Center">
-                            <ComboBoxItem Content="🇻🇳 Tiếng Việt" IsSelected="True" />
-                            <ComboBoxItem Content="🇺🇸 English" />
-                        </ComboBox>
-
-                        <!-- Theme Toggle -->
-                        <Button Width="36" Height="36"
-                            Background="#F1F5F9"
+                        <!-- Minimize Button -->
+                        <Button x:Name="MinimizeButton"
+                            Width="46"
+                            Height="32"
+                            Background="Transparent"
                             BorderThickness="0"
-                            Margin="0,0,12,0"
-                            Cursor="Hand">
-                            <TextBlock Text="🌙" FontSize="18" />
+                            Cursor="Hand"
+                            Click="MinimizeButton_Click">
+                            <TextBlock Text="─" 
+                                FontSize="16" 
+                                Foreground="#475569"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
                             <Button.Style>
                                 <Style TargetType="Button">
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}"
-                                                    CornerRadius="8">
+                                                    CornerRadius="0">
                                                     <ContentPresenter HorizontalAlignment="Center"
                                                         VerticalAlignment="Center" />
                                                 </Border>
@@ -316,27 +350,27 @@
                             </Button.Style>
                         </Button>
 
-                        <!-- Notifications -->
-                        <Button Width="36" Height="36"
-                            Background="#F1F5F9"
+                        <!-- Maximize/Restore Button -->
+                        <Button x:Name="MaximizeButton"
+                            Width="46"
+                            Height="32"
+                            Background="Transparent"
                             BorderThickness="0"
-                            Margin="0,0,12,0"
-                            Cursor="Hand">
-                            <Grid>
-                                <TextBlock Text="🔔" FontSize="18" />
-                                <Ellipse Width="8" Height="8"
-                                    Fill="#EF4444"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Top"
-                                    Margin="0,-2,-2,0" />
-                            </Grid>
+                            Cursor="Hand"
+                            Click="MaximizeButton_Click">
+                            <TextBlock x:Name="MaximizeIcon"
+                                Text="□" 
+                                FontSize="14" 
+                                Foreground="#475569"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
                             <Button.Style>
                                 <Style TargetType="Button">
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}"
-                                                    CornerRadius="8">
+                                                    CornerRadius="0">
                                                     <ContentPresenter HorizontalAlignment="Center"
                                                         VerticalAlignment="Center" />
                                                 </Border>
@@ -352,17 +386,41 @@
                             </Button.Style>
                         </Button>
 
-                        <!-- User Avatar -->
-                        <Ellipse Width="36" Height="36"
-                            Fill="#685AFF"
-                            Cursor="Hand">
-                            <Ellipse.Effect>
-                                <DropShadowEffect BlurRadius="4"
-                                    ShadowDepth="2"
-                                    Color="#40000000"
-                                    Opacity="0.2" />
-                            </Ellipse.Effect>
-                        </Ellipse>
+                        <!-- Close Button -->
+                        <Button x:Name="CloseButton"
+                            Width="46"
+                            Height="32"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Click="CloseButton_Click">
+                            <TextBlock Text="✕" 
+                                FontSize="16" 
+                                Foreground="#475569"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                    CornerRadius="0">
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#EF4444" />
+                                            <Setter Property="Foreground" Value="White" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
