@@ -33,11 +33,6 @@ namespace AdminPhoneStore.Services.Business
         Task<AddTrackingResponse?> AddTrackingAsync(long orderId, AddTrackingRequest request);
 
         /// <summary>
-        /// Cập nhật tracking
-        /// </summary>
-        Task<bool> UpdateTrackingAsync(long orderId, long trackingId, AddTrackingRequest request);
-
-        /// <summary>
         /// Xóa tracking
         /// </summary>
         Task<bool> DeleteTrackingAsync(long orderId, long trackingId);

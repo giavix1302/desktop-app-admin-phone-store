@@ -131,20 +131,6 @@ namespace AdminPhoneStore.Services.Business
             }
         }
 
-        public async Task<bool> UpdateTrackingAsync(long orderId, long trackingId, AddTrackingRequest request)
-        {
-            try
-            {
-                var response = await _apiClient.PutAsync<AddTrackingRequest, object>(
-                    $"admin/orders/{orderId}/tracking/{trackingId}", request);
-                return response != null;
-            }
-            catch (ApiException)
-            {
-                throw;
-            }
-        }
-
         public async Task<bool> DeleteTrackingAsync(long orderId, long trackingId)
         {
             try

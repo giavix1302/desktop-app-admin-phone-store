@@ -113,6 +113,7 @@ namespace AdminPhoneStore.Models
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Subtotal { get; set; }
+        public bool IsReviewed { get; set; }
     }
 
     /// <summary>
@@ -124,12 +125,10 @@ namespace AdminPhoneStore.Models
         public OrderStatus Status { get; set; }
         public string? Location { get; set; }
         public string? Description { get; set; }
-        public string? Note { get; set; }
         public string? TrackingNumber { get; set; }
         public string? ShippingPattern { get; set; }
         public DateTime? EstimatedDelivery { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
     }
 
     /// <summary>
@@ -179,18 +178,16 @@ namespace AdminPhoneStore.Models
     public class UpdateOrderPaymentRequest
     {
         public PaymentStatus PaymentStatus { get; set; }
-        public PaymentMethod? PaymentMethod { get; set; }
     }
 
     /// <summary>
-    /// DTO cho Add/Update Tracking Request
+    /// DTO cho Add Tracking Request
     /// </summary>
     public class AddTrackingRequest
     {
         public OrderStatus Status { get; set; }
         public string? Location { get; set; }
         public string? Description { get; set; }
-        public string? Note { get; set; }
         public string? TrackingNumber { get; set; }
         public string? ShippingPattern { get; set; }
         public DateTime? EstimatedDelivery { get; set; }

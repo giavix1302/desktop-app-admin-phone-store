@@ -34,6 +34,13 @@ namespace AdminPhoneStore.ViewModels.Pages
         private string _sortBy = "createdAt";
         private string _sortDir = "desc";
 
+        // Edit form
+        private bool _isEditMode;
+        private string _editFullName = string.Empty;
+        private string _editPhoneNumber = string.Empty;
+        private string _editAddress = string.Empty;
+        private string _editNote = string.Empty;
+
         public ObservableCollection<User> Users
         {
             get => _users;
@@ -206,6 +213,37 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
+        // Edit form properties
+        public bool IsEditMode
+        {
+            get => _isEditMode;
+            set { _isEditMode = value; OnPropertyChanged(); }
+        }
+
+        public string EditFullName
+        {
+            get => _editFullName;
+            set { _editFullName = value; OnPropertyChanged(); }
+        }
+
+        public string EditPhoneNumber
+        {
+            get => _editPhoneNumber;
+            set { _editPhoneNumber = value; OnPropertyChanged(); }
+        }
+
+        public string EditAddress
+        {
+            get => _editAddress;
+            set { _editAddress = value; OnPropertyChanged(); }
+        }
+
+        public string EditNote
+        {
+            get => _editNote;
+            set { _editNote = value; OnPropertyChanged(); }
+        }
+
         // Commands
         public RelayCommand LoadUsersCommand { get; }
         public RelayCommand LoadUserDetailCommand { get; }
@@ -214,6 +252,10 @@ namespace AdminPhoneStore.ViewModels.Pages
         public RelayCommand PreviousPageCommand { get; }
         public RelayCommand NextPageCommand { get; }
         public RelayCommand CloseUserDetailCommand { get; }
+        public RelayCommand EditUserCommand { get; }
+        public RelayCommand SaveUserCommand { get; }
+        public RelayCommand CancelEditCommand { get; }
+        public RelayCommand ToggleStatusCommand { get; }
 
         public UserViewModel(
             IUserService userService,
@@ -253,6 +295,18 @@ namespace AdminPhoneStore.ViewModels.Pages
                 }
             }, () => CanGoToNextPage);
             CloseUserDetailCommand = new RelayCommand(() => CloseUserDetail());
+            EditUserCommand = new RelayCommand(() =>
+            {
+                if (UserDetail == null) return;
+                EditFullName = UserDetail.FullName ?? string.Empty;
+                EditPhoneNumber = UserDetail.PhoneNumber ?? string.Empty;
+                EditAddress = UserDetail.Address ?? string.Empty;
+                EditNote = UserDetail.Note ?? string.Empty;
+                IsEditMode = true;
+            }, () => UserDetail != null);
+            SaveUserCommand = new RelayCommand(async () => await SaveUserAsync(), () => UserDetail != null);
+            CancelEditCommand = new RelayCommand(() => IsEditMode = false);
+            ToggleStatusCommand = new RelayCommand(async () => await ToggleStatusAsync(), () => UserDetail != null);
 
             // Load data khi khởi tạo
             _ = LoadUsersAsync();
@@ -333,11 +387,74 @@ namespace AdminPhoneStore.ViewModels.Pages
             _ = LoadUsersAsync();
         }
 
+        private async Task SaveUserAsync()
+        {
+            if (UserDetail == null) return;
+
+            try
+            {
+                IsLoading = true;
+                var request = new UpdateUserRequest
+                {
+                    FullName = string.IsNullOrWhiteSpace(EditFullName) ? null : EditFullName,
+                    PhoneNumber = string.IsNullOrWhiteSpace(EditPhoneNumber) ? null : EditPhoneNumber,
+                    Address = string.IsNullOrWhiteSpace(EditAddress) ? null : EditAddress,
+                    Note = string.IsNullOrWhiteSpace(EditNote) ? null : EditNote,
+                };
+                await _userService.UpdateUserAsync(UserDetail.Id, request);
+                IsEditMode = false;
+                _dialogService.ShowSuccess("Cập nhật người dùng thành công!");
+                // Reload detail
+                await LoadUserDetailAsync(UserDetail.Id);
+                await LoadUsersAsync();
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Lỗi khi cập nhật người dùng: {ex.Message}", "Lỗi");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task ToggleStatusAsync()
+        {
+            if (UserDetail == null) return;
+
+            var action = UserDetail.Enabled ? "vô hiệu hóa" : "kích hoạt";
+            bool confirmed = _dialogService.ShowConfirmation(
+                $"Bạn có chắc muốn {action} tài khoản '{UserDetail.Email}'?",
+                "Xác nhận",
+                "Xác nhận",
+                "Hủy"
+            );
+            if (!confirmed) return;
+
+            try
+            {
+                IsLoading = true;
+                await _userService.ToggleUserStatusAsync(UserDetail.Id);
+                _dialogService.ShowSuccess($"Đã {action} tài khoản thành công!");
+                await LoadUserDetailAsync(UserDetail.Id);
+                await LoadUsersAsync();
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Lỗi khi thay đổi trạng thái: {ex.Message}", "Lỗi");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private void CloseUserDetail()
         {
             ShowUserDetail = false;
             UserDetail = null;
             SelectedUser = null;
+            IsEditMode = false;
         }
     }
 }

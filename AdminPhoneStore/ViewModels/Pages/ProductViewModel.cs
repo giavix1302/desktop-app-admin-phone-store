@@ -27,7 +27,7 @@ namespace AdminPhoneStore.ViewModels.Pages
         private string _name = string.Empty;
         private string? _description;
         private decimal _price;
-        private decimal? _discountPrice;
+        private decimal? _discountPercent;
         private int _stockQuantity;
         private bool _isActive = true;
         private long? _selectedCategoryId;
@@ -39,6 +39,21 @@ namespace AdminPhoneStore.ViewModels.Pages
         private ObservableCollection<Category> _categories = new();
         private ObservableCollection<Brand> _brands = new();
         private ObservableCollection<Color> _colors = new();
+
+        // Pagination
+        private int _currentPage = 1;
+        private int _pageSize = 20;
+        private int _totalItems;
+        private int _totalPages;
+
+        // Filter
+        private long? _filterBrandId;
+        private long? _filterCategoryId;
+        private string _filterMinPrice = string.Empty;
+        private string _filterMaxPrice = string.Empty;
+        private string _filterSortBy = string.Empty;
+        private string _filterSortDir = "asc";
+        private string _filterSearchText = string.Empty;
 
         // Product Images
         private ObservableCollection<ProductImage> _productImages = new();
@@ -128,12 +143,12 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
-        public decimal? DiscountPrice
+        public decimal? DiscountPercent
         {
-            get => _discountPrice;
+            get => _discountPercent;
             set
             {
-                _discountPrice = value;
+                _discountPercent = value;
                 OnPropertyChanged();
             }
         }
@@ -228,6 +243,103 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
+        // Pagination properties
+        public int CurrentPage
+        {
+            get => _currentPage;
+            set
+            {
+                _currentPage = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanGoToPreviousPage));
+                OnPropertyChanged(nameof(CanGoToNextPage));
+            }
+        }
+
+        public int PageSize
+        {
+            get => _pageSize;
+            set { _pageSize = value; OnPropertyChanged(); }
+        }
+
+        public int TotalItems
+        {
+            get => _totalItems;
+            set { _totalItems = value; OnPropertyChanged(); }
+        }
+
+        public int TotalPages
+        {
+            get => _totalPages;
+            set
+            {
+                _totalPages = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanGoToNextPage));
+            }
+        }
+
+        public bool CanGoToPreviousPage => CurrentPage > 1;
+        public bool CanGoToNextPage => CurrentPage < TotalPages;
+
+        // Filter properties
+        public long? FilterBrandId
+        {
+            get => _filterBrandId;
+            set { _filterBrandId = value; OnPropertyChanged(); }
+        }
+
+        public long? FilterCategoryId
+        {
+            get => _filterCategoryId;
+            set { _filterCategoryId = value; OnPropertyChanged(); }
+        }
+
+        public string FilterMinPrice
+        {
+            get => _filterMinPrice;
+            set { _filterMinPrice = value; OnPropertyChanged(); }
+        }
+
+        public string FilterMaxPrice
+        {
+            get => _filterMaxPrice;
+            set { _filterMaxPrice = value; OnPropertyChanged(); }
+        }
+
+        public string FilterSortBy
+        {
+            get => _filterSortBy;
+            set { _filterSortBy = value; OnPropertyChanged(); }
+        }
+
+        public string FilterSortDir
+        {
+            get => _filterSortDir;
+            set { _filterSortDir = value; OnPropertyChanged(); }
+        }
+
+        public string FilterSearchText
+        {
+            get => _filterSearchText;
+            set { _filterSearchText = value; OnPropertyChanged(); }
+        }
+
+        public List<KeyValuePair<string, string>> SortByOptions { get; } = new()
+        {
+            new KeyValuePair<string, string>("", "Mặc định"),
+            new KeyValuePair<string, string>("name", "Tên"),
+            new KeyValuePair<string, string>("price", "Giá"),
+            new KeyValuePair<string, string>("rating", "Đánh giá"),
+            new KeyValuePair<string, string>("createdAt", "Ngày tạo"),
+        };
+
+        public List<KeyValuePair<string, string>> SortDirOptions { get; } = new()
+        {
+            new KeyValuePair<string, string>("asc", "Tăng dần"),
+            new KeyValuePair<string, string>("desc", "Giảm dần"),
+        };
+
         public RelayCommand LoadProductsCommand { get; }
         public RelayCommand LoadDropdownsCommand { get; }
         public RelayCommand AddProductCommand { get; }
@@ -241,6 +353,11 @@ namespace AdminPhoneStore.ViewModels.Pages
         public RelayCommand UploadImageCommand { get; }
         public RelayCommand<ProductImage> DeleteImageCommand { get; }
         public RelayCommand<ProductImage> SetPrimaryImageCommand { get; }
+        public RelayCommand PreviousPageCommand { get; }
+        public RelayCommand NextPageCommand { get; }
+        public RelayCommand ApplyFiltersCommand { get; }
+        public RelayCommand ClearFiltersCommand { get; }
+        public RelayCommand SearchCommand { get; }
 
         // Helper property để bind với ListBox SelectedItems
         private ObservableCollection<Color> _selectedColors = new();
@@ -298,10 +415,50 @@ namespace AdminPhoneStore.ViewModels.Pages
             UploadImageCommand = new RelayCommand(async () => await UploadImageAsync());
             DeleteImageCommand = new RelayCommand<ProductImage>(async (image) => await DeleteImageAsync(image));
             SetPrimaryImageCommand = new RelayCommand<ProductImage>(async (image) => await SetPrimaryImageAsync(image));
+            PreviousPageCommand = new RelayCommand(async () =>
+            {
+                if (CanGoToPreviousPage)
+                {
+                    CurrentPage--;
+                    await LoadProductsAsync();
+                }
+            }, () => CanGoToPreviousPage);
+            NextPageCommand = new RelayCommand(async () =>
+            {
+                if (CanGoToNextPage)
+                {
+                    CurrentPage++;
+                    await LoadProductsAsync();
+                }
+            }, () => CanGoToNextPage);
+            ApplyFiltersCommand = new RelayCommand(async () =>
+            {
+                CurrentPage = 1;
+                await LoadProductsAsync();
+            });
+            ClearFiltersCommand = new RelayCommand(async () =>
+            {
+                FilterBrandId = null;
+                FilterCategoryId = null;
+                FilterMinPrice = string.Empty;
+                FilterMaxPrice = string.Empty;
+                FilterSortBy = string.Empty;
+                FilterSortDir = "asc";
+                FilterSearchText = string.Empty;
+                CurrentPage = 1;
+                await LoadProductsAsync();
+            });
+            SearchCommand = new RelayCommand(async () => await SearchProductsAsync());
 
             // Load data khi khởi tạo
             _ = LoadDropdownsAsync();
             _ = LoadProductsAsync();
+        }
+
+        private async Task SearchProductsAsync()
+        {
+            CurrentPage = 1;
+            await LoadProductsAsync();
         }
 
         private async Task LoadProductsAsync()
@@ -309,14 +466,28 @@ namespace AdminPhoneStore.ViewModels.Pages
             try
             {
                 IsLoading = true;
-                var products = await _productService.GetAllProductsAsync();
+                var filter = new ProductFilterRequest
+                {
+                    Page = CurrentPage,
+                    PageSize = PageSize,
+                    BrandId = FilterBrandId,
+                    CategoryId = FilterCategoryId,
+                    MinPrice = decimal.TryParse(FilterMinPrice, out var minP) ? minP : null,
+                    MaxPrice = decimal.TryParse(FilterMaxPrice, out var maxP) ? maxP : null,
+                    SortBy = string.IsNullOrEmpty(FilterSortBy) ? null : FilterSortBy,
+                    SortDir = string.IsNullOrEmpty(FilterSortDir) ? null : FilterSortDir,
+                    Search = string.IsNullOrEmpty(FilterSearchText) ? null : FilterSearchText.Trim(),
+                };
+                var pagedResult = await _productService.GetAllProductsAsync(filter);
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Products.Clear();
-                    foreach (var product in products)
+                    foreach (var product in pagedResult.Items)
                     {
                         Products.Add(product);
                     }
+                    TotalItems = pagedResult.TotalCount;
+                    TotalPages = pagedResult.TotalPages;
                 });
             }
             catch (Exception ex)
@@ -393,7 +564,7 @@ namespace AdminPhoneStore.ViewModels.Pages
             Name = product.Name;
             Description = product.Description;
             Price = product.Price;
-            DiscountPrice = product.DiscountPrice;
+            DiscountPercent = product.DiscountPercent;
             StockQuantity = product.StockQuantity;
             IsActive = product.IsActive;
             SelectedCategoryId = product.CategoryId;
@@ -449,7 +620,7 @@ namespace AdminPhoneStore.ViewModels.Pages
             Name = string.Empty;
             Description = null;
             Price = 0;
-            DiscountPrice = null;
+            DiscountPercent = null;
             StockQuantity = 0;
             IsActive = true;
             SelectedCategoryId = null;
@@ -525,7 +696,7 @@ namespace AdminPhoneStore.ViewModels.Pages
                         Name = Name,
                         Description = Description,
                         Price = Price,
-                        DiscountPrice = DiscountPrice,
+                        DiscountPercent = DiscountPercent,
                         StockQuantity = StockQuantity,
                         CategoryId = SelectedCategoryId.Value,
                         BrandId = SelectedBrandId.Value,
@@ -544,7 +715,7 @@ namespace AdminPhoneStore.ViewModels.Pages
                         Name = Name,
                         Description = Description,
                         Price = Price,
-                        DiscountPrice = DiscountPrice,
+                        DiscountPercent = DiscountPercent,
                         StockQuantity = StockQuantity,
                         IsActive = IsActive,
                         CategoryId = SelectedCategoryId.Value,

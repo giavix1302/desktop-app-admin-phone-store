@@ -42,17 +42,14 @@ namespace AdminPhoneStore.ViewModels.Pages
 
         // Order Detail - Payment Update
         private PaymentStatus? _newPaymentStatus;
-        private PaymentMethod? _newPaymentMethod;
 
         // Tracking
         private ObservableCollection<OrderTracking> _trackings = new();
         private OrderTracking? _selectedTracking;
         private bool _showTrackingForm;
-        private bool _isEditTracking;
         private OrderStatus _trackingStatus;
         private string? _trackingLocation;
         private string? _trackingDescription;
-        private string? _trackingNote;
         private string? _trackingNumber;
         private string? _shippingPattern;
         private DateTime? _estimatedDelivery;
@@ -97,7 +94,6 @@ namespace AdminPhoneStore.ViewModels.Pages
                     // Set default values for status update
                     NewStatus = value.Status;
                     NewPaymentStatus = value.PaymentStatus;
-                    NewPaymentMethod = value.PaymentMethod;
                 }
             }
         }
@@ -272,16 +268,6 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
-        public PaymentMethod? NewPaymentMethod
-        {
-            get => _newPaymentMethod;
-            set
-            {
-                _newPaymentMethod = value;
-                OnPropertyChanged();
-            }
-        }
-
         // Tracking
         public ObservableCollection<OrderTracking> Trackings
         {
@@ -313,16 +299,6 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
-        public bool IsEditTracking
-        {
-            get => _isEditTracking;
-            set
-            {
-                _isEditTracking = value;
-                OnPropertyChanged();
-            }
-        }
-
         public OrderStatus TrackingStatus
         {
             get => _trackingStatus;
@@ -349,16 +325,6 @@ namespace AdminPhoneStore.ViewModels.Pages
             set
             {
                 _trackingDescription = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public string? TrackingNote
-        {
-            get => _trackingNote;
-            set
-            {
-                _trackingNote = value;
                 OnPropertyChanged();
             }
         }
@@ -418,7 +384,6 @@ namespace AdminPhoneStore.ViewModels.Pages
         public RelayCommand UpdateStatusCommand { get; }
         public RelayCommand UpdatePaymentCommand { get; }
         public RelayCommand AddTrackingCommand { get; }
-        public RelayCommand EditTrackingCommand { get; }
         public RelayCommand SaveTrackingCommand { get; }
         public RelayCommand CancelTrackingCommand { get; }
         public RelayCommand DeleteTrackingCommand { get; }
@@ -465,13 +430,6 @@ namespace AdminPhoneStore.ViewModels.Pages
             UpdateStatusCommand = new RelayCommand(async () => await UpdateStatusAsync(), () => OrderDetail != null && NewStatus.HasValue);
             UpdatePaymentCommand = new RelayCommand(async () => await UpdatePaymentAsync(), () => OrderDetail != null && NewPaymentStatus.HasValue);
             AddTrackingCommand = new RelayCommand(() => ShowAddTrackingForm(), () => OrderDetail != null);
-            EditTrackingCommand = new RelayCommand(() =>
-            {
-                if (SelectedTracking != null)
-                {
-                    LoadTrackingForEdit(SelectedTracking);
-                }
-            }, () => SelectedTracking != null);
             SaveTrackingCommand = new RelayCommand(async () => await SaveTrackingAsync());
             CancelTrackingCommand = new RelayCommand(() => CancelTrackingForm());
             DeleteTrackingCommand = new RelayCommand(async () => await DeleteTrackingAsync(), () => SelectedTracking != null);
@@ -637,8 +595,7 @@ namespace AdminPhoneStore.ViewModels.Pages
                 IsLoading = true;
                 var request = new UpdateOrderPaymentRequest
                 {
-                    PaymentStatus = NewPaymentStatus.Value,
-                    PaymentMethod = NewPaymentMethod
+                    PaymentStatus = NewPaymentStatus.Value
                 };
                 var success = await _orderService.UpdateOrderPaymentAsync(OrderDetail.Id, request);
                 if (success)
@@ -667,30 +624,23 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
+        private static string GenerateTrackingNumber()
+        {
+            var prefix = "VN";
+            var timestamp = DateTime.Now.ToString("yyMMddHHmm");
+            var random = Random.Shared.Next(1000, 9999);
+            return $"{prefix}{timestamp}{random}";
+        }
+
         private void ShowAddTrackingForm()
         {
             SelectedTracking = null;
-            IsEditTracking = false;
             TrackingStatus = OrderDetail?.Status ?? OrderStatus.PENDING;
             TrackingLocation = string.Empty;
             TrackingDescription = string.Empty;
-            TrackingNote = string.Empty;
-            TrackingNumber = string.Empty;
+            TrackingNumber = GenerateTrackingNumber();
             ShippingPattern = string.Empty;
             EstimatedDelivery = null;
-            ShowTrackingForm = true;
-        }
-
-        private void LoadTrackingForEdit(OrderTracking tracking)
-        {
-            TrackingStatus = tracking.Status;
-            TrackingLocation = tracking.Location;
-            TrackingDescription = tracking.Description;
-            TrackingNote = tracking.Note;
-            TrackingNumber = tracking.TrackingNumber;
-            ShippingPattern = tracking.ShippingPattern;
-            EstimatedDelivery = tracking.EstimatedDelivery;
-            IsEditTracking = true;
             ShowTrackingForm = true;
         }
 
@@ -698,7 +648,6 @@ namespace AdminPhoneStore.ViewModels.Pages
         {
             ShowTrackingForm = false;
             SelectedTracking = null;
-            IsEditTracking = false;
         }
 
         private async Task SaveTrackingAsync()
@@ -713,31 +662,17 @@ namespace AdminPhoneStore.ViewModels.Pages
                     Status = TrackingStatus,
                     Location = string.IsNullOrWhiteSpace(TrackingLocation) ? null : TrackingLocation,
                     Description = string.IsNullOrWhiteSpace(TrackingDescription) ? null : TrackingDescription,
-                    Note = string.IsNullOrWhiteSpace(TrackingNote) ? null : TrackingNote,
                     TrackingNumber = string.IsNullOrWhiteSpace(TrackingNumber) ? null : TrackingNumber,
                     ShippingPattern = string.IsNullOrWhiteSpace(ShippingPattern) ? null : ShippingPattern,
                     EstimatedDelivery = EstimatedDelivery
                 };
 
-                if (IsEditTracking && SelectedTracking != null)
+                var response = await _orderService.AddTrackingAsync(OrderDetail.Id, request);
+                if (response != null)
                 {
-                    var success = await _orderService.UpdateTrackingAsync(OrderDetail.Id, SelectedTracking.Id, request);
-                    if (success)
-                    {
-                        _dialogService.ShowSuccess("Cập nhật tracking thành công!");
-                        await LoadOrderDetailAsync(OrderDetail.Id);
-                        CancelTrackingForm();
-                    }
-                }
-                else
-                {
-                    var response = await _orderService.AddTrackingAsync(OrderDetail.Id, request);
-                    if (response != null)
-                    {
-                        _dialogService.ShowSuccess("Thêm tracking thành công!");
-                        await LoadOrderDetailAsync(OrderDetail.Id);
-                        CancelTrackingForm();
-                    }
+                    _dialogService.ShowSuccess("Thêm tracking thành công!");
+                    await LoadOrderDetailAsync(OrderDetail.Id);
+                    CancelTrackingForm();
                 }
             }
             catch (ApiException ex)

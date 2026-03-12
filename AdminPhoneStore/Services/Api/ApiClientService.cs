@@ -92,6 +92,19 @@ namespace AdminPhoneStore.Services.Api
             }, url);
         }
 
+        public async Task<TResponse?> PutMultipartAsync<TResponse>(string endpoint, System.Net.Http.MultipartFormDataContent content) where TResponse : class
+        {
+            SyncTokenFromAuthService();
+            var url = BuildUrl(endpoint, null);
+            _loggerService?.LogInformation($"API PUT multipart: {url}");
+
+            return await ExecuteWithRetryAndAutoRefreshAsync(async () =>
+            {
+                var response = await _httpClient.PutAsync(url, content);
+                return await HandleResponseAsync<TResponse>(response, url);
+            }, url);
+        }
+
         public async Task<bool> DeleteAsync(string endpoint)
         {
             SyncTokenFromAuthService(); // Sync token trước mỗi request

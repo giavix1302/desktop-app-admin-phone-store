@@ -74,5 +74,15 @@ namespace AdminPhoneStore.Services.Business
                 throw;
             }
         }
+
+        public async Task UpdateUserAsync(long userId, UpdateUserRequest request)
+        {
+            await _apiClient.PutAsync<UpdateUserRequest, object>($"admin/users/{userId}", request);
+        }
+
+        public async Task ToggleUserStatusAsync(long userId)
+        {
+            await _apiClient.PutAsync<object, object>($"admin/users/{userId}/toggle-status", new object());
+        }
     }
 }

@@ -16,6 +16,28 @@ namespace AdminPhoneStore.Services.Business
         /// Lấy chi tiết user theo ID
         /// </summary>
         Task<UserDetail?> GetUserByIdAsync(long userId);
+
+        /// <summary>
+        /// Cập nhật thông tin user
+        /// </summary>
+        Task UpdateUserAsync(long userId, UpdateUserRequest request);
+
+        /// <summary>
+        /// Kích hoạt / Vô hiệu hóa user
+        /// </summary>
+        Task ToggleUserStatusAsync(long userId);
+    }
+
+    /// <summary>
+    /// DTO cho Update User Request
+    /// </summary>
+    public class UpdateUserRequest
+    {
+        public string? FullName { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Address { get; set; }
+        public string? Note { get; set; }
+        public bool? Enabled { get; set; }
     }
 
     /// <summary>

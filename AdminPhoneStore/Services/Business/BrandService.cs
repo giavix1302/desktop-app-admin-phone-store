@@ -1,5 +1,6 @@
 using AdminPhoneStore.Models;
 using AdminPhoneStore.Services.Api;
+using System.Net.Http;
 
 namespace AdminPhoneStore.Services.Business
 {
@@ -74,6 +75,48 @@ namespace AdminPhoneStore.Services.Business
             {
                 throw;
             }
+        }
+
+        public async Task<Brand?> UploadImageAsync(long id, string filePath)
+        {
+            try
+            {
+                var content = new MultipartFormDataContent();
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                var fileName = System.IO.Path.GetFileName(filePath);
+                var fileContent = new ByteArrayContent(fileBytes);
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(GetMimeType(fileName));
+                content.Add(fileContent, "image", fileName);
+                return await _apiClient.PutMultipartAsync<Brand>($"brands/{id}/image", content);
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteImageAsync(long id)
+        {
+            try
+            {
+                return await _apiClient.DeleteAsync($"brands/{id}/image");
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+        }
+
+        private static string GetMimeType(string fileName)
+        {
+            var ext = System.IO.Path.GetExtension(fileName).ToLowerInvariant();
+            return ext switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".webp" => "image/webp",
+                _ => "application/octet-stream"
+            };
         }
     }
 }

@@ -107,36 +107,350 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Search -->
+                    <!-- Filter Panel -->
                     <Border Grid.Row="0"
-                        Background="#F1F5F9"
-                        CornerRadius="6"
-                        Padding="12"
+                        Background="#F8FAFC"
+                        BorderBrush="#E2E8F0"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16"
                         Margin="0,0,0,16">
-                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            FontSize="14"
-                            Foreground="#1E293B"
-                            VerticalContentAlignment="Center">
-                            <TextBox.Style>
-                                <Style TargetType="TextBox">
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="TextBox">
-                                                <Border Background="{TemplateBinding Background}"
-                                                    CornerRadius="6">
-                                                    <ScrollViewer x:Name="PART_ContentHost"
-                                                        Margin="0" />
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </TextBox.Style>
-                        </TextBox>
+                        <StackPanel>
+                            <!-- Row 0: Search by ID or Name -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Tìm kiếm theo tên" FontSize="12" Foreground="#64748B" Margin="0,0,0,4" />
+                                    <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Height="32" Padding="8,0">
+                                        <TextBox Text="{Binding FilterSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            Foreground="#1E293B"
+                                            VerticalContentAlignment="Center">
+                                            <TextBox.InputBindings>
+                                                <KeyBinding Key="Return" Command="{Binding SearchCommand}" />
+                                            </TextBox.InputBindings>
+                                        </TextBox>
+                                    </Border>
+                                </StackPanel>
+                                <Button Grid.Column="2"
+                                    Content="Tìm kiếm"
+                                    Command="{Binding SearchCommand}"
+                                    Background="#685AFF"
+                                    Foreground="White"
+                                    Padding="14,0"
+                                    Height="32"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    BorderThickness="0"
+                                    VerticalAlignment="Bottom"
+                                    Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#5A4AE6" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+
+                            <!-- Row 1: Brand, Category, Min Price, Max Price -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="110" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Brand -->
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Thương hiệu" FontSize="12" Foreground="#64748B" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding Brands}"
+                                        SelectedValuePath="Id"
+                                        DisplayMemberPath="Name"
+                                        SelectedValue="{Binding FilterBrandId}"
+                                        FontSize="13"
+                                        Height="32">
+                                        <ComboBox.Style>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ComboBox">
+                                                            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6">
+                                                                <Grid>
+                                                                    <ContentPresenter Name="ContentSite"
+                                                                        IsHitTestVisible="False"
+                                                                        Content="{TemplateBinding SelectionBoxItem}"
+                                                                        ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                                        Margin="8,0,24,0"
+                                                                        VerticalAlignment="Center" />
+                                                                    <TextBlock Name="PlaceholderText"
+                                                                        Text="-- Tất cả --"
+                                                                        Foreground="#94A3B8"
+                                                                        Margin="8,0,24,0"
+                                                                        VerticalAlignment="Center"
+                                                                        FontSize="13"
+                                                                        Visibility="Collapsed" />
+                                                                    <ToggleButton Name="ToggleButton"
+                                                                        IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                        ClickMode="Press"
+                                                                        Focusable="False"
+                                                                        HorizontalAlignment="Right"
+                                                                        Width="24"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        Cursor="Hand" />
+                                                                    <Popup Name="Popup"
+                                                                        Placement="Bottom"
+                                                                        IsOpen="{TemplateBinding IsDropDownOpen}"
+                                                                        AllowsTransparency="True"
+                                                                        Focusable="False"
+                                                                        PopupAnimation="Slide">
+                                                                        <Grid Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                                                            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6">
+                                                                                <ScrollViewer SnapsToDevicePixels="True">
+                                                                                    <StackPanel IsItemsHost="True" />
+                                                                                </ScrollViewer>
+                                                                            </Border>
+                                                                        </Grid>
+                                                                    </Popup>
+                                                                </Grid>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="SelectedValue" Value="{x:Null}">
+                                                                    <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible" />
+                                                                    <Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed" />
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ComboBox.Style>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Category -->
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Danh mục" FontSize="12" Foreground="#64748B" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding Categories}"
+                                        SelectedValuePath="Id"
+                                        DisplayMemberPath="Name"
+                                        SelectedValue="{Binding FilterCategoryId}"
+                                        FontSize="13"
+                                        Height="32">
+                                        <ComboBox.Style>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ComboBox">
+                                                            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6">
+                                                                <Grid>
+                                                                    <ContentPresenter Name="ContentSite"
+                                                                        IsHitTestVisible="False"
+                                                                        Content="{TemplateBinding SelectionBoxItem}"
+                                                                        ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                                        Margin="8,0,24,0"
+                                                                        VerticalAlignment="Center" />
+                                                                    <TextBlock Name="PlaceholderText"
+                                                                        Text="-- Tất cả --"
+                                                                        Foreground="#94A3B8"
+                                                                        Margin="8,0,24,0"
+                                                                        VerticalAlignment="Center"
+                                                                        FontSize="13"
+                                                                        Visibility="Collapsed" />
+                                                                    <ToggleButton Name="ToggleButton"
+                                                                        IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                        ClickMode="Press"
+                                                                        Focusable="False"
+                                                                        HorizontalAlignment="Right"
+                                                                        Width="24"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        Cursor="Hand" />
+                                                                    <Popup Name="Popup"
+                                                                        Placement="Bottom"
+                                                                        IsOpen="{TemplateBinding IsDropDownOpen}"
+                                                                        AllowsTransparency="True"
+                                                                        Focusable="False"
+                                                                        PopupAnimation="Slide">
+                                                                        <Grid Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                                                            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6">
+                                                                                <ScrollViewer SnapsToDevicePixels="True">
+                                                                                    <StackPanel IsItemsHost="True" />
+                                                                                </ScrollViewer>
+                                                                            </Border>
+                                                                        </Grid>
+                                                                    </Popup>
+                                                                </Grid>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="SelectedValue" Value="{x:Null}">
+                                                                    <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible" />
+                                                                    <Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed" />
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ComboBox.Style>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Min Price -->
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Giá từ" FontSize="12" Foreground="#64748B" Margin="0,0,0,4" />
+                                    <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Height="32" Padding="8,0">
+                                        <TextBox Text="{Binding FilterMinPrice, UpdateSourceTrigger=PropertyChanged}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            Foreground="#1E293B"
+                                            VerticalContentAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Max Price -->
+                                <StackPanel Grid.Column="6">
+                                    <TextBlock Text="Giá đến" FontSize="12" Foreground="#64748B" Margin="0,0,0,4" />
+                                    <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Height="32" Padding="8,0">
+                                        <TextBox Text="{Binding FilterMaxPrice, UpdateSourceTrigger=PropertyChanged}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            Foreground="#1E293B"
+                                            VerticalContentAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Row 2: Sort By, Sort Dir, Apply/Clear buttons -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="130" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Sort By -->
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Sắp xếp theo" FontSize="12" Foreground="#64748B" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding SortByOptions}"
+                                        SelectedValuePath="Key"
+                                        DisplayMemberPath="Value"
+                                        SelectedValue="{Binding FilterSortBy}"
+                                        FontSize="13"
+                                        Height="32" />
+                                </StackPanel>
+
+                                <!-- Sort Dir -->
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Thứ tự" FontSize="12" Foreground="#64748B" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding SortDirOptions}"
+                                        SelectedValuePath="Key"
+                                        DisplayMemberPath="Value"
+                                        SelectedValue="{Binding FilterSortDir}"
+                                        FontSize="13"
+                                        Height="32" />
+                                </StackPanel>
+
+                                <!-- Apply button -->
+                                <Button Grid.Column="4"
+                                    Content="Lọc"
+                                    Command="{Binding ApplyFiltersCommand}"
+                                    Background="#685AFF"
+                                    Foreground="White"
+                                    Padding="16,0"
+                                    Height="32"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    BorderThickness="0"
+                                    VerticalAlignment="Bottom"
+                                    Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#5A4AE6" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <!-- Clear button -->
+                                <Button Grid.Column="6"
+                                    Content="Xóa lọc"
+                                    Command="{Binding ClearFiltersCommand}"
+                                    Background="#F1F5F9"
+                                    Foreground="#475569"
+                                    Padding="16,0"
+                                    Height="32"
+                                    FontSize="13"
+                                    BorderThickness="0"
+                                    VerticalAlignment="Bottom"
+                                    Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#E2E8F0" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
                     </Border>
 
                     <!-- DataGrid -->
@@ -254,6 +568,95 @@
                             </Style>
                         </DataGrid.Style>
                     </DataGrid>
+
+                    <!-- Pagination -->
+                    <Border Grid.Row="2"
+                        BorderBrush="#F1F5F9"
+                        BorderThickness="0,1,0,0"
+                        Padding="0,12,0,0"
+                        Margin="0,12,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="13" Foreground="#64748B">
+                                <Run Text="Trang " />
+                                <Run Text="{Binding CurrentPage}" FontWeight="SemiBold" Foreground="#1E293B" />
+                                <Run Text=" / " />
+                                <Run Text="{Binding TotalPages}" FontWeight="SemiBold" Foreground="#1E293B" />
+                                <Run Text=" — " />
+                                <Run Text="{Binding TotalItems}" FontWeight="SemiBold" Foreground="#685AFF" />
+                                <Run Text=" sản phẩm" />
+                            </TextBlock>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="← Trước"
+                                    Command="{Binding PreviousPageCommand}"
+                                    Background="#F1F5F9"
+                                    Foreground="#475569"
+                                    BorderThickness="0"
+                                    Padding="14,7"
+                                    Margin="0,0,8,0"
+                                    FontSize="13"
+                                    Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.4" />
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#E2E8F0" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Content="Sau →"
+                                    Command="{Binding NextPageCommand}"
+                                    Background="#685AFF"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Padding="14,7"
+                                    FontSize="13"
+                                    Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.4" />
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#5649E0" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </Grid>
             </Border>
 
@@ -375,10 +778,10 @@
                                 </TextBox>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Giá khuyến mãi" FontSize="13" FontWeight="SemiBold"
+                                <TextBlock Text="Giảm giá (% 0-99.99)" FontSize="13" FontWeight="SemiBold"
                                     Foreground="#475569" Margin="0,0,0,6" />
                                 <TextBox
-                                    Text="{Binding DiscountPrice, UpdateSourceTrigger=PropertyChanged}"
+                                    Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}"
                                     FontSize="14"
                                     Padding="12"
                                     Background="#F1F5F9"

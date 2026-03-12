@@ -4,6 +4,7 @@ using AdminPhoneStore.Services.Api;
 using AdminPhoneStore.Services.Business;
 using AdminPhoneStore.Services.UI;
 using AdminPhoneStore.ViewModels.Base;
+using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.Windows;
 
@@ -23,6 +24,7 @@ namespace AdminPhoneStore.ViewModels.Pages
         // Form fields
         private string _name = string.Empty;
         private string? _description;
+        private string? _imageUrl;
 
         public ObservableCollection<Category> Categories
         {
@@ -99,12 +101,27 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
+        public string? ImageUrl
+        {
+            get => _imageUrl;
+            set
+            {
+                _imageUrl = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasImage));
+            }
+        }
+
+        public bool HasImage => !string.IsNullOrEmpty(ImageUrl);
+
         public RelayCommand LoadCategoriesCommand { get; }
         public RelayCommand AddCategoryCommand { get; }
         public RelayCommand EditCategoryCommand { get; }
         public RelayCommand SaveCategoryCommand { get; }
         public RelayCommand CancelEditCommand { get; }
         public RelayCommand DeleteCategoryCommand { get; }
+        public RelayCommand UploadImageCommand { get; }
+        public RelayCommand DeleteImageCommand { get; }
 
         public CategoryViewModel(
             ICategoryService categoryService,
@@ -125,6 +142,8 @@ namespace AdminPhoneStore.ViewModels.Pages
             SaveCategoryCommand = new RelayCommand(async () => await SaveCategoryAsync());
             CancelEditCommand = new RelayCommand(() => CancelEdit());
             DeleteCategoryCommand = new RelayCommand(async () => await DeleteCategoryAsync(), () => SelectedCategory != null);
+            UploadImageCommand = new RelayCommand(async () => await UploadImageAsync(), () => SelectedCategory != null);
+            DeleteImageCommand = new RelayCommand(async () => await DeleteImageAsync(), () => SelectedCategory != null && HasImage);
 
             // Load data khi khởi tạo
             _ = LoadCategoriesAsync();
@@ -153,6 +172,7 @@ namespace AdminPhoneStore.ViewModels.Pages
             SelectedCategory = null;
             Name = string.Empty;
             Description = string.Empty;
+            ImageUrl = null;
             IsEditMode = true;
         }
 
@@ -160,6 +180,7 @@ namespace AdminPhoneStore.ViewModels.Pages
         {
             Name = category.Name;
             Description = category.Description;
+            ImageUrl = category.ImageUrl;
             IsEditMode = true;
         }
 
@@ -169,6 +190,7 @@ namespace AdminPhoneStore.ViewModels.Pages
             SelectedCategory = null;
             Name = string.Empty;
             Description = string.Empty;
+            ImageUrl = null;
         }
 
         private async Task SaveCategoryAsync()
@@ -185,13 +207,7 @@ namespace AdminPhoneStore.ViewModels.Pages
 
                 if (SelectedCategory == null)
                 {
-                    // Create new
-                    var request = new CreateCategoryRequest
-                    {
-                        Name = Name,
-                        Description = Description
-                    };
-
+                    var request = new CreateCategoryRequest { Name = Name, Description = Description };
                     var newCategory = await _categoryService.CreateCategoryAsync(request);
                     if (newCategory != null)
                     {
@@ -202,13 +218,7 @@ namespace AdminPhoneStore.ViewModels.Pages
                 }
                 else
                 {
-                    // Update existing
-                    var request = new UpdateCategoryRequest
-                    {
-                        Name = Name,
-                        Description = Description
-                    };
-
+                    var request = new UpdateCategoryRequest { Name = Name, Description = Description };
                     var updatedCategory = await _categoryService.UpdateCategoryAsync(SelectedCategory.Id, request);
                     if (updatedCategory != null)
                     {
@@ -220,12 +230,7 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
             catch (ApiException ex)
             {
-                // Hiển thị message từ API (có thể là validation error hoặc business logic error)
-                var errorMessage = ex.Message;
-                if (ex.Message.Contains("API Error:"))
-                {
-                    errorMessage = ex.Message.Replace("API Error:", "").Trim();
-                }
+                var errorMessage = ex.Message.Contains("API Error:") ? ex.Message.Replace("API Error:", "").Trim() : ex.Message;
                 _dialogService.ShowError(errorMessage, "Lỗi");
             }
             catch (Exception ex)
@@ -246,10 +251,7 @@ namespace AdminPhoneStore.ViewModels.Pages
             {
                 bool confirmed = _dialogService.ShowConfirmation(
                     $"Bạn có chắc muốn xóa danh mục '{SelectedCategory.Name}'?",
-                    "Xác nhận xóa",
-                    "Xóa",
-                    "Hủy"
-                );
+                    "Xác nhận xóa", "Xóa", "Hủy");
 
                 if (!confirmed) return;
 
@@ -264,12 +266,7 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
             catch (ApiException ex)
             {
-                // Hiển thị message từ API (ví dụ: "Cannot delete category with existing products")
-                var errorMessage = ex.Message;
-                if (ex.Message.Contains("API Error:"))
-                {
-                    errorMessage = ex.Message.Replace("API Error:", "").Trim();
-                }
+                var errorMessage = ex.Message.Contains("API Error:") ? ex.Message.Replace("API Error:", "").Trim() : ex.Message;
                 _dialogService.ShowError(errorMessage, "Lỗi");
             }
             catch (Exception ex)
@@ -282,10 +279,85 @@ namespace AdminPhoneStore.ViewModels.Pages
             }
         }
 
+        private async Task UploadImageAsync()
+        {
+            if (SelectedCategory == null) return;
+
+            var dialog = new OpenFileDialog
+            {
+                Title = "Chọn ảnh danh mục",
+                Filter = "Image files (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp"
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            try
+            {
+                IsLoading = true;
+                var updated = await _categoryService.UploadImageAsync(SelectedCategory.Id, dialog.FileName);
+                if (updated != null)
+                {
+                    ImageUrl = updated.ImageUrl;
+                    SelectedCategory.ImageUrl = updated.ImageUrl;
+                    _dialogService.ShowSuccess("Cập nhật ảnh thành công!");
+                    await LoadCategoriesAsync();
+                }
+            }
+            catch (ApiException ex)
+            {
+                var errorMessage = ex.Message.Contains("API Error:") ? ex.Message.Replace("API Error:", "").Trim() : ex.Message;
+                _dialogService.ShowError(errorMessage, "Lỗi");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Lỗi khi upload ảnh: {ex.Message}", "Lỗi");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task DeleteImageAsync()
+        {
+            if (SelectedCategory == null) return;
+
+            bool confirmed = _dialogService.ShowConfirmation(
+                "Bạn có chắc muốn xóa ảnh danh mục này?",
+                "Xác nhận xóa ảnh", "Xóa", "Hủy");
+
+            if (!confirmed) return;
+
+            try
+            {
+                IsLoading = true;
+                var success = await _categoryService.DeleteImageAsync(SelectedCategory.Id);
+                if (success)
+                {
+                    ImageUrl = null;
+                    SelectedCategory.ImageUrl = null;
+                    _dialogService.ShowSuccess("Xóa ảnh thành công!");
+                    await LoadCategoriesAsync();
+                }
+            }
+            catch (ApiException ex)
+            {
+                var errorMessage = ex.Message.Contains("API Error:") ? ex.Message.Replace("API Error:", "").Trim() : ex.Message;
+                _dialogService.ShowError(errorMessage, "Lỗi");
+            }
+            catch (Exception ex)
+            {
+                _dialogService.ShowError($"Lỗi khi xóa ảnh: {ex.Message}", "Lỗi");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private void FilterCategories()
         {
             // Filter logic có thể được thêm sau nếu cần
-            // Hiện tại chỉ reload toàn bộ
         }
     }
 }

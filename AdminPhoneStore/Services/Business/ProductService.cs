@@ -15,65 +15,53 @@ namespace AdminPhoneStore.Services.Business
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
         }
 
-        public async Task<List<Product>> GetAllProductsAsync()
+        public async Task<ProductPagedResponse> GetAllProductsAsync(ProductFilterRequest? filter = null)
         {
-            try
+            var queryParams = new Dictionary<string, string>();
+
+            if (filter != null)
             {
-                var products = await _apiClient.GetAsync<List<Product>>("products");
-                return products ?? new List<Product>();
+                if (filter.BrandId.HasValue)
+                    queryParams["brandId"] = filter.BrandId.Value.ToString();
+                if (filter.CategoryId.HasValue)
+                    queryParams["categoryId"] = filter.CategoryId.Value.ToString();
+                if (filter.MinPrice.HasValue)
+                    queryParams["minPrice"] = filter.MinPrice.Value.ToString();
+                if (filter.MaxPrice.HasValue)
+                    queryParams["maxPrice"] = filter.MaxPrice.Value.ToString();
+                if (!string.IsNullOrEmpty(filter.SortBy))
+                    queryParams["sortBy"] = filter.SortBy;
+                if (!string.IsNullOrEmpty(filter.SortDir))
+                    queryParams["sortDir"] = filter.SortDir;
+                queryParams["page"] = filter.Page.ToString();
+                queryParams["pageSize"] = filter.PageSize.ToString();
+                if (!string.IsNullOrEmpty(filter.Search))
+                    queryParams["search"] = filter.Search;
             }
-            catch (ApiException)
-            {
-                throw;
-            }
+
+            // HandleResponseAsync tự unwrap ApiResponse<T>, nên truyền T = ProductPagedResponse trực tiếp
+            return await _apiClient.GetAsync<ProductPagedResponse>("/api/products", queryParams)
+                   ?? new ProductPagedResponse();
         }
 
         public async Task<Product?> GetProductByIdAsync(long id)
         {
-            try
-            {
-                return await _apiClient.GetAsync<Product>($"products/{id}");
-            }
-            catch (ApiException)
-            {
-                throw;
-            }
+            return await _apiClient.GetAsync<Product>($"/api/products/{id}");
         }
 
         public async Task<Product?> CreateProductAsync(CreateProductRequest request)
         {
-            try
-            {
-                return await _apiClient.PostAsync<CreateProductRequest, Product>("products", request);
-            }
-            catch (ApiException)
-            {
-                throw;
-            }
+            return await _apiClient.PostAsync<CreateProductRequest, Product>("/api/products", request);
         }
 
         public async Task<Product?> UpdateProductAsync(long id, UpdateProductRequest request)
         {
-            try
-            {
-                return await _apiClient.PutAsync<UpdateProductRequest, Product>($"products/{id}", request);
-            }
-            catch (ApiException)
-            {
-                throw;
-            }
+            return await _apiClient.PutAsync<UpdateProductRequest, Product>($"/api/products/{id}", request);
         }
 
         public async Task<bool> DeleteProductAsync(long id)
         {
-            try
-            {
-                return await _apiClient.DeleteAsync($"products/{id}");
-            }
-            catch (ApiException)
-            {
-                throw;
-            }
+            return await _apiClient.DeleteAsync($"/api/products/{id}");
         }
     }
 }

@@ -8,9 +8,9 @@ namespace AdminPhoneStore.Services.Business
     public interface IProductService
     {
         /// <summary>
-        /// Lấy tất cả products
+        /// Lấy danh sách products (có filter, phân trang)
         /// </summary>
-        Task<List<Product>> GetAllProductsAsync();
+        Task<ProductPagedResponse> GetAllProductsAsync(ProductFilterRequest? filter = null);
 
         /// <summary>
         /// Lấy product theo ID
@@ -28,7 +28,7 @@ namespace AdminPhoneStore.Services.Business
         Task<Product?> UpdateProductAsync(long id, UpdateProductRequest request);
 
         /// <summary>
-        /// Xóa product
+        /// Xóa product (soft delete - set isActive = false)
         /// </summary>
         Task<bool> DeleteProductAsync(long id);
     }

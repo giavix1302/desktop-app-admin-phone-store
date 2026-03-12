@@ -166,6 +166,7 @@ namespace AdminPhoneStore
             services.AddTransient<IColorService, ColorService>();
             services.AddTransient<IOrderService, OrderService>();
             services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IReviewService, ReviewService>();
             services.AddTransient<IProductImageService>(sp =>
             {
                 var httpClient = sp.GetRequiredService<HttpClient>();
@@ -183,6 +184,7 @@ namespace AdminPhoneStore
             services.AddTransient<BrandViewModel>();
             services.AddTransient<OrderViewModel>();
             services.AddTransient<UserViewModel>();
+            services.AddTransient<ReviewViewModel>();
             services.AddTransient<LoginViewModel>();
 
             // Register Views
@@ -192,6 +194,7 @@ namespace AdminPhoneStore
             services.AddTransient<Views.Pages.BrandView>();
             services.AddTransient<Views.Pages.OrderView>();
             services.AddTransient<Views.Pages.UserView>();
+            services.AddTransient<Views.Pages.ReviewView>();
             services.AddTransient<Views.Auth.LoginView>();
             services.AddTransient<Views.Dialogs.ToastView>();
             services.AddTransient<Views.Dialogs.ConfirmDialogView>();

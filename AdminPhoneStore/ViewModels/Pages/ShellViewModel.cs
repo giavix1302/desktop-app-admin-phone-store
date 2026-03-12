@@ -45,6 +45,7 @@ namespace AdminPhoneStore.ViewModels.Pages
         public RelayCommand ShowBrandCommand { get; }
         public RelayCommand ShowOrderCommand { get; }
         public RelayCommand ShowCustomerCommand { get; }
+        public RelayCommand ShowReviewCommand { get; }
         public RelayCommand GoBackCommand { get; }
         public RelayCommand LogoutCommand { get; }
 
@@ -98,6 +99,12 @@ namespace AdminPhoneStore.ViewModels.Pages
             {
                 ActiveMenu = "Customers";
                 _navigationService.NavigateTo<Views.Pages.UserView>();
+            });
+
+            ShowReviewCommand = new RelayCommand(() =>
+            {
+                ActiveMenu = "Reviews";
+                _navigationService.NavigateTo<Views.Pages.ReviewView>();
             });
 
             GoBackCommand = new RelayCommand(

@@ -59,6 +59,10 @@
                 <DataTrigger Binding="{Binding ActiveMenu}" Value="Customers">
                     <Setter Property="Background" Value="#685AFF" />
                 </DataTrigger>
+                <!-- Active State for Reviews -->
+                <DataTrigger Binding="{Binding ActiveMenu}" Value="Reviews">
+                    <Setter Property="Background" Value="#685AFF" />
+                </DataTrigger>
                 <!-- Hover State -->
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#334155" />
@@ -177,6 +181,16 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="👥" FontSize="18" Margin="0,0,12,0" />
                                 <TextBlock Text="Customers" FontSize="14" Foreground="White" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Reviews -->
+                        <Button Command="{Binding ShowReviewCommand}"
+                            Style="{StaticResource MenuButtonStyle}"
+                            Tag="Reviews">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⭐" FontSize="18" Margin="0,0,12,0" />
+                                <TextBlock Text="Reviews" FontSize="14" Foreground="White" />
                             </StackPanel>
                         </Button>
 

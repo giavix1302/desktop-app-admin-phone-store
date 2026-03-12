@@ -18,16 +18,21 @@ namespace AdminPhoneStore.Services.Api
         /// <summary>
         /// POST request
         /// </summary>
-        Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data) 
-            where TRequest : class 
+        Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest data)
+            where TRequest : class
             where TResponse : class;
 
         /// <summary>
         /// PUT request
         /// </summary>
-        Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data) 
-            where TRequest : class 
+        Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest data)
+            where TRequest : class
             where TResponse : class;
+
+        /// <summary>
+        /// PUT multipart/form-data request (dùng cho upload ảnh)
+        /// </summary>
+        Task<TResponse?> PutMultipartAsync<TResponse>(string endpoint, System.Net.Http.MultipartFormDataContent content) where TResponse : class;
 
         /// <summary>
         /// DELETE request

@@ -8,6 +8,7 @@
     d:DesignHeight="600" d:DesignWidth="1200">
     <UserControl.Resources>
         <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <helpers:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
         
         <!-- Global Font Settings -->
         <Style TargetType="TextBlock">
@@ -333,6 +334,100 @@
                                 </Style>
                             </TextBox.Style>
                         </TextBox>
+
+                        <!-- Image Section (only when editing existing brand) -->
+                        <StackPanel Visibility="{Binding SelectedBrand, Converter={StaticResource NullToVisibilityConverter}}"
+                            Margin="0,0,0,16">
+                            <TextBlock Text="Hình ảnh" FontSize="13" FontWeight="SemiBold"
+                                Foreground="#475569" Margin="0,0,0,8" />
+                            <!-- Preview ảnh -->
+                            <Border Background="#F1F5F9"
+                                CornerRadius="8"
+                                Height="160"
+                                Margin="0,0,0,10"
+                                Visibility="{Binding HasImage, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Image Source="{Binding ImageUrl}"
+                                    Stretch="Uniform"
+                                    RenderOptions.BitmapScalingMode="HighQuality" />
+                            </Border>
+                            <!-- Placeholder khi chưa có ảnh -->
+                            <Border Background="#F1F5F9"
+                                CornerRadius="8"
+                                Height="160"
+                                Margin="0,0,0,10"
+                                Visibility="{Binding HasImage, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
+                                <TextBlock Text="Chưa có ảnh"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="#94A3B8"
+                                    FontSize="13" />
+                            </Border>
+                            <!-- Nút upload/xóa ảnh -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Tải ảnh lên"
+                                    Command="{Binding UploadImageCommand}"
+                                    Background="#10B981"
+                                    Foreground="White"
+                                    Padding="12,7"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    BorderThickness="0"
+                                    Margin="0,0,8,0"
+                                    Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}"
+                                                            CornerRadius="6"
+                                                            Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#059669" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Content="Xóa ảnh"
+                                    Command="{Binding DeleteImageCommand}"
+                                    Background="#EF4444"
+                                    Foreground="White"
+                                    Padding="12,7"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    BorderThickness="0"
+                                    Cursor="Hand"
+                                    Visibility="{Binding HasImage, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}"
+                                                            CornerRadius="6"
+                                                            Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#DC2626" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
 
                         <!-- Buttons -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
