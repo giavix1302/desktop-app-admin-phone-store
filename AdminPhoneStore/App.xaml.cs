@@ -6,6 +6,7 @@ using AdminPhoneStore.Services.Business;
 using AdminPhoneStore.Services.Infrastructure;
 using AdminPhoneStore.ViewModels.Auth;
 using AdminPhoneStore.ViewModels.Pages;
+using LiveChartsCore.SkiaSharpView;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -47,6 +48,9 @@ namespace AdminPhoneStore
         {
             try
             {
+                // Configure LiveCharts
+                LiveChartsCore.LiveCharts.Configure(config => config.AddSkiaSharp());
+
                 // Setup Dependency Injection
                 var services = new ServiceCollection();
                 ConfigureServices(services);
@@ -167,6 +171,7 @@ namespace AdminPhoneStore
             services.AddTransient<IOrderService, OrderService>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IReviewService, ReviewService>();
+            services.AddTransient<IDashboardService, DashboardService>();
             services.AddTransient<IProductImageService>(sp =>
             {
                 var httpClient = sp.GetRequiredService<HttpClient>();

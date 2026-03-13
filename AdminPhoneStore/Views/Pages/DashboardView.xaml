@@ -4,27 +4,281 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             Background="Transparent">
+             Background="Transparent"
+             DataContextChanged="DashboardView_DataContextChanged">
+
+    <UserControl.Resources>
+        <Style x:Key="PeriodButtonStyle" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
-        <!-- Empty State -->
-        <StackPanel HorizontalAlignment="Center" 
-                  VerticalAlignment="Center"
-                  Margin="0,60,0,0">
-            <TextBlock Text="📊" 
-                     FontSize="64" 
-                     Opacity="0.3"
-                     HorizontalAlignment="Center"
-                     Margin="0,0,0,20"/>
-            <TextBlock Text="Welcome to Dashboard" 
-                     FontSize="24" 
-                     FontWeight="SemiBold"
-                     Foreground="#64748B"
-                     HorizontalAlignment="Center"
-                     Margin="0,0,0,8"/>
-            <TextBlock Text="No data available at the moment" 
-                     FontSize="14" 
-                     Foreground="#94A3B8"
-                     HorizontalAlignment="Center"/>
+        <StackPanel>
+            <!-- ── ROW 1: KPI CARDS ── -->
+            <UniformGrid Columns="4" Margin="0,0,0,24">
+
+                <!-- Card: Revenue -->
+                <Border Margin="0,0,12,0" Background="White" CornerRadius="12" Padding="20">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Color="#64748B" Opacity="0.08" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#EDE9FE" CornerRadius="8" Width="40" Height="40" Margin="0,0,12,0">
+                                <TextBlock Text="💰" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Doanh thu tháng" FontSize="12" Foreground="#64748B" />
+                                <TextBlock Text="{Binding RevenueThisMonth, StringFormat={}{0:N0} ₫}"
+                                           FontSize="16" FontWeight="Bold" Foreground="#1E293B" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border CornerRadius="4" Padding="8,4" Margin="0,0,6,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RevenueIsPositive}" Value="True">
+                                                <Setter Property="Background" Value="#D1FAE5" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RevenueIsPositive}" Value="False">
+                                                <Setter Property="Background" Value="#FEE2E2" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding RevenueChangeText}" FontSize="12" FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RevenueIsPositive}" Value="True">
+                                                    <Setter Property="Foreground" Value="#059669" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding RevenueIsPositive}" Value="False">
+                                                    <Setter Property="Foreground" Value="#DC2626" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="vs tháng trước" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card: Orders -->
+                <Border Margin="6,0,6,0" Background="White" CornerRadius="12" Padding="20">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Color="#64748B" Opacity="0.08" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#DBEAFE" CornerRadius="8" Width="40" Height="40" Margin="0,0,12,0">
+                                <TextBlock Text="🛒" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Đơn hàng tháng" FontSize="12" Foreground="#64748B" />
+                                <TextBlock Text="{Binding OrdersThisMonth, StringFormat={}{0:N0}}"
+                                           FontSize="18" FontWeight="Bold" Foreground="#1E293B" />
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock Text="Tổng đơn trong tháng" FontSize="12" Foreground="#94A3B8" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Card: Users -->
+                <Border Margin="6,0,6,0" Background="White" CornerRadius="12" Padding="20">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Color="#64748B" Opacity="0.08" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#FCE7F3" CornerRadius="8" Width="40" Height="40" Margin="0,0,12,0">
+                                <TextBlock Text="👥" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Người dùng" FontSize="12" Foreground="#64748B" />
+                                <TextBlock Text="{Binding TotalUsers, StringFormat={}{0:N0}}"
+                                           FontSize="18" FontWeight="Bold" Foreground="#1E293B" />
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Background="#D1FAE5" CornerRadius="4" Padding="6,3" Margin="0,0,6,0">
+                                <TextBlock Text="{Binding NewUsersThisMonth, StringFormat=+{0} mới}"
+                                           FontSize="12" FontWeight="SemiBold" Foreground="#059669" />
+                            </Border>
+                            <TextBlock Text="tháng này" FontSize="12" Foreground="#94A3B8" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card: Products -->
+                <Border Margin="12,0,0,0" Background="White" CornerRadius="12" Padding="20">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Color="#64748B" Opacity="0.08" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#FEF3C7" CornerRadius="8" Width="40" Height="40" Margin="0,0,12,0">
+                                <TextBlock Text="📦" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Sản phẩm" FontSize="12" Foreground="#64748B" />
+                                <TextBlock Text="{Binding TotalActiveProducts, StringFormat={}{0:N0}}"
+                                           FontSize="18" FontWeight="Bold" Foreground="#1E293B" />
+                            </StackPanel>
+                        </StackPanel>
+                        <Border Background="#FEE2E2" CornerRadius="4" Padding="6,3" HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding LowStockCount, StringFormat={}{0} sắp hết hàng}"
+                                       FontSize="12" FontWeight="SemiBold" Foreground="#DC2626" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+            </UniformGrid>
+
+            <!-- ── ROW 2: CHARTS ── -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Revenue Chart Card -->
+                <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Color="#64748B" Opacity="0.08" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Chart Header -->
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="Doanh thu" FontSize="16" FontWeight="Bold" Foreground="#1E293B" />
+                                <TextBlock Text="Biểu đồ doanh thu theo thời gian" FontSize="12" Foreground="#94A3B8" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Command="{Binding ChangePeriodCommand}" CommandParameter="7d" Margin="0,0,4,0">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PeriodButtonStyle}">
+                                            <Setter Property="Background" Value="#F1F5F9" />
+                                            <Setter Property="Foreground" Value="#64748B" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedPeriod}" Value="7d">
+                                                    <Setter Property="Background" Value="#685AFF" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <TextBlock Text="7 ngày" />
+                                </Button>
+                                <Button Command="{Binding ChangePeriodCommand}" CommandParameter="30d" Margin="0,0,4,0">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PeriodButtonStyle}">
+                                            <Setter Property="Background" Value="#F1F5F9" />
+                                            <Setter Property="Foreground" Value="#64748B" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedPeriod}" Value="30d">
+                                                    <Setter Property="Background" Value="#685AFF" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <TextBlock Text="30 ngày" />
+                                </Button>
+                                <Button Command="{Binding ChangePeriodCommand}" CommandParameter="12m">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PeriodButtonStyle}">
+                                            <Setter Property="Background" Value="#F1F5F9" />
+                                            <Setter Property="Foreground" Value="#64748B" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedPeriod}" Value="12m">
+                                                    <Setter Property="Background" Value="#685AFF" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <TextBlock Text="12 tháng" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                        <!-- Revenue chart injected from code-behind -->
+                        <Border x:Name="RevenueChartHost" Height="280" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Order Status Chart Card -->
+                <Border Grid.Column="2" Background="White" CornerRadius="12" Padding="20">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Color="#64748B" Opacity="0.08" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <TextBlock Text="Trạng thái đơn hàng" FontSize="16" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,4" />
+                        <TextBlock Text="{Binding TotalOrders, StringFormat=Tổng: {0:N0} đơn}"
+                                   FontSize="12" Foreground="#94A3B8" Margin="0,0,0,12" />
+                        <!-- Pie chart injected from code-behind -->
+                        <Border x:Name="PieChartHost" Height="200" />
+                        <!-- Legend -->
+                        <ItemsControl x:Name="StatusLegend" Margin="0,12,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
+                                        <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="#94A3B8" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Name}" Value="PENDING">
+                                                            <Setter Property="Fill" Value="#F59E0B" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Name}" Value="PROCESSING">
+                                                            <Setter Property="Fill" Value="#3B82F6" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Name}" Value="SHIPPED">
+                                                            <Setter Property="Fill" Value="#8B5CF6" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Name}" Value="DELIVERED">
+                                                            <Setter Property="Fill" Value="#10B981" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Name}" Value="CANCELLED">
+                                                            <Setter Property="Fill" Value="#EF4444" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="{Binding Name}" FontSize="12" Foreground="#475569" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </StackPanel>
     </Grid>
 </UserControl>

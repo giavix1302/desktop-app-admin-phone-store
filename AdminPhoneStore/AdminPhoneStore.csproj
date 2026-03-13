@@ -9,6 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="LiveChartsCore" Version="2.0.0-rc6.1" NoWarn="NU1701" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView" Version="2.0.0-rc6.1" NoWarn="NU1701" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc6.1" GeneratePathProperty="true" NoWarn="NU1701" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
